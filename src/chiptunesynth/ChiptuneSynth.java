@@ -74,6 +74,15 @@ public class ChiptuneSynth implements Runnable {
   private volatile double tempoScale = 1.0;
   private double sequencerAccumulator = 0;
 
+  // musical frames consumed since the song's frame 0 — an exact integer
+  // count of sequencer steps, adjusted by seek/rewind. Written by the audio
+  // thread (increments) and by seek/rewind (absolute sets); a lost increment
+  // in that race costs one frame of readout, never audio.
+  private volatile long musicalFrame = 0;
+
+  private final java.util.List<ChiptuneSynthListener> listeners =
+      new java.util.concurrent.CopyOnWriteArrayList<ChiptuneSynthListener>();
+
   // per channel mixing weights
   private final double p1Mix = 0.25;
   private final double p2Mix = 0.25;
@@ -105,7 +114,19 @@ public class ChiptuneSynth implements Runnable {
     if (noiTrack != null) {
       noiTrack.reset();
     }
+    musicalFrame = 0;
     return this;
+  }
+
+  /** Register for device-clock-grounded playback-position callbacks. */
+  public void addListener(ChiptuneSynthListener l) {
+    if (l != null && !listeners.contains(l)) {
+      listeners.add(l);
+    }
+  }
+
+  public void removeListener(ChiptuneSynthListener l) {
+    listeners.remove(l);
   }
   
   public ChiptuneSynth setSong(ChiptuneSong song) {
@@ -146,6 +167,13 @@ public class ChiptuneSynth implements Runnable {
       t.framesLeft = t.cur.durationFrames;
       t.elapsed = 0;
       t.started = true;
+      if (t.seekElapsed > 0) {
+        // resuming mid-note after Track.seek(): skip ahead inside the note
+        // so vibrato/swell/arp/slide land where continuous playback would be
+        t.elapsed = t.seekElapsed;
+        t.framesLeft -= t.seekElapsed;
+        t.seekElapsed = 0;
+      }
       if (t.cur.midi >= 0) {
         // a rest does not update prevMidi, so a slide still works across one
         t.glideFrom = Double.isNaN(t.prevMidi) ? t.cur.midi : t.prevMidi;
@@ -180,12 +208,17 @@ public class ChiptuneSynth implements Runnable {
       line.start();
       byte[] buf = new byte[SAMPLES_PER_FRAME * 4];
 
+      // fresh line per run means a fresh device sample counter; the
+      // chronometer maps that counter back onto musical frames
+      SongChronometer chron = new SongChronometer(musicalFrame);
+
       while (running) {
         sequencerAccumulator += speed * tempoScale;
         while (sequencerAccumulator >= 1.0) {
           // decrement sequencer accumulator by 1
           sequencerAccumulator -= 1.0;
-          
+          musicalFrame++;
+
           Note n1 = advance(p1Track);
           if (n1 != null) {
             if (n1.midi < 0) {
@@ -280,6 +313,8 @@ public class ChiptuneSynth implements Runnable {
           buf[base + 3] = hi;     // right channel, high byte
         }
         line.write(buf, 0, buf.length);
+        chron.blockWritten(musicalFrame);
+        notifyPosition(chron.audibleFrame(line.getLongFramePosition()));
       }
       line.drain();
     } catch (LineUnavailableException e) {
@@ -320,6 +355,71 @@ public class ChiptuneSynth implements Runnable {
     if (p2Track != null) p2Track.reset();
     if (triTrack != null) triTrack.reset();
     if (noiTrack != null) noiTrack.reset();
+    musicalFrame = 0;
+  }
+
+  // wrap the running frame counter into the song and tell the listeners;
+  // the lead track's length is the canonical loop (the aligned invariant)
+  private void notifyPosition(long audibleFrame) {
+    if (listeners.isEmpty() || p1Track == null) {
+      return;
+    }
+    int total = p1Track.totalFrames();
+    if (total <= 0) {
+      return;
+    }
+    int frame = (int) (((audibleFrame % total) + total) % total);
+    for (ChiptuneSynthListener l : listeners) {
+      l.playbackPosition(frame, total);
+    }
+  }
+
+  /**
+   * Jump playback to a fraction (0..1) of the song — the dev "pan" control.
+   * Each track chases its own state (see Track.seek), so a note sustaining
+   * across the target keeps sounding instead of dropping to silence. The
+   * channels are silenced first so nothing rings over from the old position;
+   * the kick/snare/tom voices are left to their natural ~10-frame tails.
+   *
+   * @param fraction 0.0 = start of the loop, 1.0 wraps back to the start
+   */
+  public synchronized void seek(double fraction) {
+    fraction = Math.max(0, Math.min(1, fraction));
+    seekTrack(p1Track, fraction);
+    seekTrack(p2Track, fraction);
+    seekTrack(triTrack, fraction);
+    seekTrack(noiTrack, fraction);
+    if (p1Track != null) {
+      // keep the position counter in step with where the tracks now are
+      musicalFrame = (int) Math.round(fraction * p1Track.totalFrames());
+    }
+    p1.noteOff();
+    p2.noteOff();
+    tri.noteOff();
+    noi.noteOff();
+  }
+
+  // fraction of each track's own length: identical for an aligned song, and
+  // still sane for one whose channels disagree about the total
+  private static void seekTrack(Track t, double fraction) {
+    if (t != null) {
+      t.seek((int) Math.round(fraction * t.totalFrames()));
+    }
+  }
+
+  /**
+   * Wall-clock length of one loop at the current speed and tempo scale, in
+   * seconds. Lets a UI translate a seek fraction into a time readout that
+   * matches what a stopwatch (or a YouTube timestamp) would say.
+   */
+  public double getDurationSeconds() {
+    int frames = 0;
+    if (p1Track != null) frames = Math.max(frames, p1Track.totalFrames());
+    if (p2Track != null) frames = Math.max(frames, p2Track.totalFrames());
+    if (triTrack != null) frames = Math.max(frames, triTrack.totalFrames());
+    if (noiTrack != null) frames = Math.max(frames, noiTrack.totalFrames());
+    double rate = FRAME_RATE * speed * tempoScale;   // musical frames per sec
+    return rate <= 0 ? 0 : frames / rate;
   }
 
   public boolean isRunning() {

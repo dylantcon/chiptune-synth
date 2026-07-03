@@ -54,4 +54,19 @@ public abstract class ChiptuneMusicHandler implements MusicHandler {
   public double getSpeed() {
     return synth.getSpeed();
   }
+
+  @Override
+  public void seek(double fraction) {
+    synth.seek(fraction);
+  }
+
+  @Override
+  public double getDurationSeconds() {
+    return synth.getDurationSeconds();
+  }
+
+  @Override
+  public void addSynthListener(chiptunesynth.ChiptuneSynthListener l) {
+    synth.addListener(l);
+  }
 }

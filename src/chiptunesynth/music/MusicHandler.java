@@ -37,6 +37,30 @@ public interface MusicHandler {
 
   public double getSpeed();
 
+  /** Jump playback to a fraction (0..1) of the song's loop. */
+  public void seek(double fraction);
+
+  /** Wall-clock seconds for one loop at the current speed. */
+  public double getDurationSeconds();
+
+  /**
+   * "M:SS.D" — one decimal, matching the synth's honest 1-frame resolution.
+   * A formatter, not state: seconds must be computed where speed and
+   * tempoScale are known (getDurationSeconds), never stored on a Track,
+   * whose only truthful unit is the frame.
+   *
+   * @param seconds wall-clock seconds
+   * @return e.g. 114.63 -&gt; "1:54.6"
+   */
+  public static String formatSeconds(double seconds) {
+    double r = Math.round(Math.max(0, seconds) * 10) / 10.0;
+    int m = (int) (r / 60);
+    return String.format("%d:%04.1f", m, r - m * 60);
+  }
+
+  /** Register for device-clock-grounded playback-position callbacks. */
+  public void addSynthListener(chiptunesynth.ChiptuneSynthListener l);
+
   public abstract String getMusicType();
 
   public boolean doingPlayback();

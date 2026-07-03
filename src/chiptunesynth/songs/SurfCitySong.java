@@ -30,8 +30,8 @@ import chiptunesynth.Track;
  *                   C-Eb-F-G bass run + fill make the chorus downbeat land
  *                   like an arrival.
  *   CNR    8 bars   call & response, four 2-bar cells: lead states the hook
- *                   bar low (C3); after an eighth-note breath pulse 2 answers
- *                   an octave up (C5-Bb4 / G G F Eb F).
+ *                   bar low (C3); after a fat breath (an eighth plus a 16th)
+ *                   pulse 2 answers an octave up (C5-Bb4 / G G F Eb F).
  *   CODA   4 bars   the hook figure spread wide: lead at C3-C4, pulse 2
  *                   doubling an octave up, bass dropping to whole-note
  *                   C2 C2 Bb1 Ab1 slides. Ab resolves back to the hook's C.
@@ -299,10 +299,19 @@ public class SurfCitySong implements ChiptuneSong {
   // rip's written octave). It enters on the "and" of 1 — the eighth-note
   // breath between call and answer is part of the original's phrasing
   // (a quarter was too long; ear-tuned).
+  //
+  // The two rests are deliberately LOPSIDED, ~2.4:1: call ends 13 frames
+  // before the bar + 18 more before the answer enters (~31 frames of air),
+  // but the next call re-enters right on the downbeat (~13 frames of air).
+  // Both phrases end with the same stab-plus-breath tail; only the delayed
+  // entrance skews them. The extra 16th of lateness comes out of the Bb's
+  // slot, so from the G4 on, the phrase sits at the same groove position —
+  // only the entrance saunters. Keeping it uneven is what makes the beat
+  // lively instead of rigid — don't "fix" the asymmetry.
   private static void respBar(Track t) {
-    t.addNotes(R, E);
+    t.addNotes(R, E + S);
     e8(t, C5);
-    t.addNotes(AS4, 14, R, 4);
+    t.addNotes(AS4, 12);
     e8(t, G4);
     s16(t, G4);
     e8(t, F4);

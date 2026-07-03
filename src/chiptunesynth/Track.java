@@ -20,6 +20,7 @@ public class Track {
   boolean started = false;         // true only on the frame cur (re)triggered
   double prevMidi = Double.NaN;    // last real pitch (slide source / memory)
   double glideFrom = Double.NaN;   // portamento origin for the current note
+  int seekElapsed = 0;             // seek(): resume this far into the note
 
   private double defaultVolume = 0.7;
   private double defaultDuty = 0.25;
@@ -200,6 +201,53 @@ public class Track {
     return t;
   }
 
+  /**
+   * Position this track as if it had just played {@code frame} frames from
+   * the top, so playback resumes there seamlessly (the "pan" control). The
+   * frame is wrapped into the track's length.
+   *
+   * The classic seek problem is state chase: you cannot simply start at the
+   * next event, because a note that BEGAN before the target may still be
+   * sounding there — starting at the next event replaces a sustain with
+   * silence. Our Notes are self-contained (volume/duty/decay/fx baked in at
+   * addNotes time), so the chase is one note of lookbehind: find the note
+   * spanning the target and let the sequencer re-trigger it with its
+   * mid-note position intact, plus the last real pitch before it so a
+   * portamento slide keeps its glide origin.
+   *
+   * One honest approximation: the channel's volume-decay envelope restarts
+   * from full rather than partially faded (exact for SUSTAINED notes and
+   * the triangle, which has no envelope). All pitch effects — vibrato, arp,
+   * swell, slide, pitch-env — resume exactly, because they are computed
+   * from the elapsed counter this method restores.
+   *
+   * @param frame target position in frames, wrapped into [0, totalFrames)
+   */
+  public void seek(int frame) {
+    reset();
+    int total = totalFrames();
+    if (total <= 0) {
+      return;
+    }
+    frame = ((frame % total) + total) % total;
+    int at = 0;
+    double before = Double.NaN;      // last real pitch before the target
+    for (int i = 0; i < notes.size(); ++i) {
+      Note n = notes.get(i);
+      int end = at + n.durationFrames;
+      if (frame < end) {
+        cursor = i;                  // next advance re-triggers this note...
+        seekElapsed = frame - at;    // ...resuming this far into it
+        prevMidi = before;           // chased slide origin
+        return;
+      }
+      if (n.midi >= 0) {
+        before = n.midi;
+      }
+      at = end;
+    }
+  }
+
   void reset() {
     cursor = 0;
     framesLeft = 0;
@@ -208,6 +256,7 @@ public class Track {
     started = false;
     prevMidi = Double.NaN;
     glideFrom = Double.NaN;
+    seekElapsed = 0;
   }
 
 }
