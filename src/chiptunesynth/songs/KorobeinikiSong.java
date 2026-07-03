@@ -20,7 +20,7 @@ public class KorobeinikiSong implements ChiptuneSong {
     // Vibrato sings on the sustained half-notes of the B-section (E5/C5/D5/B4
     // held for H); the 10-frame delay keeps the bouncy eighth-note A-section
     // crisp and articulate.
-    lead.withVibrato(0.3, 5.5, 10);
+    lead.withVibrato(0.30, 5.5, 10);
     lead.addNotes(
         // bar 1: E5 q | B4 e C5 e | D5 q | C5 e B4 e
         E5, Q, B4, E, C5, E, D5, Q, C5, E, B4, E,

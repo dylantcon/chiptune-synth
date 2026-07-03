@@ -34,7 +34,7 @@ public class HyruleTempleSong implements ChiptuneSong {
       }
     }
     t.withDecay(STACCATO).addNotes(G4, E, G4, Q, G4, Q, G4, DQ);
-    t.withDecay(DEFAULT_DECAY).addNotes(AS4, DQ, A4, DQ, GS4, Q);
+    t.withDecay(LEGATO).addNotes(AS4, DQ, A4, DQ, GS4, Q);
     /* END INTRO */
     return t;
   }
@@ -96,7 +96,7 @@ public class HyruleTempleSong implements ChiptuneSong {
       }
     }
     
-    t.withDecay(DEFAULT_DECAY);
+    t.withDecay(LEGATO);
     
     /* END PRE-CHORUS */
     return t;
@@ -124,7 +124,7 @@ public class HyruleTempleSong implements ChiptuneSong {
     t.withDecay(GENTLE_FADE).addNotes(FS4, Q, A4, Q, C5, E);
     /* bar 9 */
     t.withDecay(GENTLE_FADE).addNotes(D4, W);
-    t.withDecay(DEFAULT_DECAY);
+    t.withDecay(LEGATO);
     
     /* END CHORUS */
     return t;

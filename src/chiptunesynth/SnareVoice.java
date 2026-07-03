@@ -45,6 +45,14 @@ class SnareVoice {
   private static final double TONE_LEVEL  = 0.55;    // internal layer balance
   private static final double NOISE_LEVEL = 0.65;
 
+  // DPCM-style lo-fi, same idea as KickVoice: sample-and-hold at ~11 kHz plus
+  // a coarse amplitude staircase, because the sampled snares this voice
+  // imitates were played back crunchy, not clean. CRUSH = 1 to disable.
+  private static final int CRUSH = 4;
+  private static final double CRUSH_LEVELS = 31;
+  private int crushPhase = 0;
+  private double held = 0;
+
   void trigger(double velocity) {
     this.toneFreq = TONE_START_HZ;
     this.toneAmp = velocity;
@@ -88,6 +96,10 @@ class SnareVoice {
       double n = ((lfsr & 1) == 0) ? 1.0 : -1.0;
       out += n * noiseAmp * NOISE_LEVEL;
     }
-    return out;
+    if (crushPhase == 0) {
+      held = Math.round(out * CRUSH_LEVELS) / CRUSH_LEVELS;
+    }
+    crushPhase = (crushPhase + 1) % CRUSH;
+    return held;
   }
 }

@@ -72,20 +72,21 @@ public interface ChiptuneSong {
   public static final int R = -1;
 
   /* === VOICE MIXING DEFAULTS === */
-  public static final double LEAD_VOL = 0.7;
-  public static final double LEAD_DUTY = 0.25;   // classic NES square lead
-  public static final double HARMONY_VOL = 0.55;
-  public static final double HARMONY_DUTY = 0.5;   // fuller for inner voice
+  public static final double LEAD_VOL = 0.702;
+  public static final double LEAD_DUTY = 0.203;   // classic NES square lead
+  public static final double HARMONY_VOL = 0.492;
+  public static final double HARMONY_DUTY = 0.491;   // fuller for inner voice
   public static final double BASS_VOL = 1.0;
-  public static final double BASS_DUTY = 0.5;    // ignored by triangle
-  public static final double DRUM_VOL = 0.5;
-  public static final double DRUM_DUTY = 0.5;    // ignored by noise
+  public static final double BASS_DUTY = 0.50;    // ignored by triangle
+  public static final double DRUM_VOL = 0.685;
+  public static final double DRUM_DUTY = 0.50;    // ignored by noise
 
   /* === SUSTAIN RELATED CONSTANTS === */
-  public static final double DEFAULT_DECAY = 0.6;   // current default — fast fade
+  public static final double LEGATO = 0.535;   // current default
   public static final double SUSTAINED = 0.0;   // hold at full volume
-  public static final double GENTLE_FADE = 0.2;   // pad-like, slow decline
-  public static final double STACCATO = 1.5;   // sharp percussive cut
+  public static final double GENTLE_FADE = 0.205;   // pad-like, slow decline
+  public static final double STACCATO = 1.565;   // sharp percussive cut
+  public static final double PORTATO = LEGATO + STACCATO / 2;
 
   /* === METHODS EACH SONG IMPLEMENTS === */
   Track getLead();

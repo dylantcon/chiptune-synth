@@ -145,6 +145,61 @@ public class Track {
     return this;
   }
 
+  /**
+   * Total length of this track in frames — the sum of every note and rest.
+   * The synth loops each channel's track independently, so all four tracks of
+   * a song MUST sum to the same total or the channels drift apart from the
+   * second loop onward. Songs (and the test runner) can check alignment
+   * cheaply with this.
+   *
+   * @return total duration in frames
+   */
+  public int totalFrames() {
+    int sum = 0;
+    for (Note n : notes) {
+      sum += n.durationFrames;
+    }
+    return sum;
+  }
+
+  /**
+   * The David Wise echo: a copy of {@code src} delayed by {@code delayFrames},
+   * with every note's volume scaled by {@code volScale} and re-voiced at
+   * {@code duty} (thinner reads as "reflection" rather than "double"). This is
+   * the second-pulse trick Wise (and the Follins) leaned on constantly: the
+   * ear hears one melody with studio delay instead of two square waves.
+   *
+   * The result is exactly {@code src.totalFrames()} long — the delay is
+   * prepended as a rest and the tail truncated to fit — so lending it to a
+   * channel never breaks bar alignment. If the source's last phrase must echo
+   * past its section boundary, the caller owns that splice.
+   *
+   * @param src         the track to echo (typically a lead section)
+   * @param delayFrames echo delay; 2-3 sixteenths is the classic feel
+   * @param volScale    multiplier applied to each note's volume
+   * @param duty        pulse duty for the echo voice
+   * @return a new same-length Track containing the delayed copy
+   */
+  public static Track echoOf(Track src, int delayFrames, double volScale,
+                             double duty) {
+    Track t = new Track();
+    int budget = src.totalFrames();
+    if (delayFrames > 0) {
+      int d = Math.min(delayFrames, budget);
+      t.add(Note.rest(d));
+      budget -= d;
+    }
+    for (Note n : src.notes) {
+      if (budget <= 0) {
+        break;
+      }
+      int d = Math.min(n.durationFrames, budget);
+      t.add(new Note(n.midi, d, n.volume * volScale, duty, n.decay, n.fx));
+      budget -= d;
+    }
+    return t;
+  }
+
   void reset() {
     cursor = 0;
     framesLeft = 0;

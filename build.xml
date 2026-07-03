@@ -10,6 +10,24 @@
 <project name="ChiptuneSynth" default="default" basedir=".">
     <description>Builds, tests, and runs the project ChiptuneSynth.</description>
     <import file="nbproject/build-impl.xml"/>
+
+    <!-- Keep dist/ChiptuneSynth.jar a self-contained "fat" jar. Today the
+         project has no external dependencies, so this is a near no-op; if a
+         library is ever added, NetBeans copies it to dist/lib and this hook
+         merges it into the jar so the GUI driver always runs standalone. -->
+    <target name="-post-jar">
+        <jar destfile="${dist.dir}/fat.jar.tmp" duplicate="preserve">
+            <zipfileset src="${dist.jar}" excludes="META-INF/MANIFEST.MF"/>
+            <zipgroupfileset dir="${dist.dir}/lib" includes="*.jar" erroronmissingdir="false"/>
+            <manifest>
+                <attribute name="Main-Class" value="${main.class}"/>
+            </manifest>
+        </jar>
+        <move file="${dist.dir}/fat.jar.tmp" tofile="${dist.jar}"/>
+        <delete dir="${dist.dir}/lib"/>
+        <echo message="Fat JAR built: ${dist.jar}"/>
+    </target>
+
     <!--
 
     There exist several targets which are by default empty and which can be 

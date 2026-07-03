@@ -37,6 +37,13 @@ class TomVoice {
   private static final double TONE_LEVEL  = 0.85;
   private static final double NOISE_LEVEL = 0.35;
 
+  // DPCM-style lo-fi, same idea as KickVoice: sample-and-hold at ~11 kHz plus
+  // a coarse amplitude staircase for the sampled-tom grit. CRUSH = 1 disables.
+  private static final int CRUSH = 4;
+  private static final double CRUSH_LEVELS = 31;
+  private int crushPhase = 0;
+  private double held = 0;
+
   void trigger(double freqHz, double velocity) {
     this.target = freqHz;
     this.freq = freqHz * START_RATIO;
@@ -80,6 +87,10 @@ class TomVoice {
       }
       out += (((lfsr & 1) == 0) ? 1.0 : -1.0) * noiseAmp * NOISE_LEVEL;
     }
-    return out;
+    if (crushPhase == 0) {
+      held = Math.round(out * CRUSH_LEVELS) / CRUSH_LEVELS;
+    }
+    crushPhase = (crushPhase + 1) % CRUSH;
+    return held;
   }
 }

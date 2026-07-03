@@ -27,6 +27,17 @@ class KickVoice {
   private double freq = 0;
   private double amp = 0;
 
+  // DPCM-style lo-fi: emit a new value only every CRUSH samples (sample-and-
+  // hold at ~11 kHz) and round it to a coarse amplitude staircase. The real
+  // Battletoads/Contra drums were delta-encoded samples played back at rates
+  // like this, and the stair-step grit is most of their character — a clean
+  // 44.1 kHz sine reads as "synth", not "sampled drum". Set CRUSH = 1 for
+  // the clean voice.
+  private static final int CRUSH = 4;        // 44100/4 ≈ 11 kHz hold rate
+  private static final double LEVELS = 31;   // ~5-bit amplitude staircase
+  private int crushPhase = 0;
+  private double held = 0;
+
   // tuned by ear against the reference: punchy, sub-heavy, ~8-frame tail.
   private static final double START_HZ = 150.0;
   private static final double FLOOR_HZ = 40.0;
@@ -59,6 +70,13 @@ class KickVoice {
     if (phase >= 1.0) {
       phase -= 1.0;
     }
-    return Math.sin(2 * Math.PI * phase) * amp;
+    double raw = Math.sin(2 * Math.PI * phase) * amp;
+    // sample-and-hold decimation + quantization (see CRUSH above). The phase
+    // still advances every sample so the pitch sweep is unchanged.
+    if (crushPhase == 0) {
+      held = Math.round(raw * LEVELS) / LEVELS;
+    }
+    crushPhase = (crushPhase + 1) % CRUSH;
+    return held;
   }
 }
