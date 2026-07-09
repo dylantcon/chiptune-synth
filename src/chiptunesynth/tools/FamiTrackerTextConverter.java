@@ -20,20 +20,20 @@ import java.util.Set;
  * compilable {@code ChiptuneSong} class: one private Track-builder method per
  * (channel, pattern) pair, and getters that chain them in ORDER-list order.
  * The tracker's pattern/order structure IS the song's section structure, so
- * the output arrives pre-factored — repeated patterns become repeated method
+ * the output arrives pre-factored  repeated patterns become repeated method
  * calls you can immediately see and reshape into the house style.
  *
  * Channel mapping: pulse 1 -&gt; lead, pulse 2 -&gt; harmony, triangle -&gt; bass,
- * noise -&gt; drums (bucketed onto KICK/SNARE/HIHAT — remap by ear). The DPCM
+ * noise -&gt; drums (bucketed onto KICK/SNARE/HIHAT  remap by ear). The DPCM
  * column can't be synthesized, so its hits are emitted as comments in the
  * drums getter for hand-mapping onto the kick/snare/tom voices.
  *
  * Timing: FamiTracker (NTSC) and this synth both tick at 60 Hz, so row
- * durations transfer 1:1 as frames — frames per row = 150 * speed / tempo,
+ * durations transfer 1:1 as frames  frames per row = 150 * speed / tempo,
  * distributed with an accumulator when fractional. getTempoScale() is 1.0
  * for NTSC modules.
  *
- * WHAT IS NOT CONVERTED (v1) — finish these by ear, that's the fun part:
+ * WHAT IS NOT CONVERTED (v1)  finish these by ear, that's the fun part:
  *  - Instrument envelopes/macros: volume decay, duty sequences, and arps
  *    live in instruments, which are ignored. Set withDecay/withDuty per voice.
  *  - Effect columns: recognized and emitted as comments with a suggested
@@ -51,8 +51,16 @@ import java.util.Set;
  */
 public class FamiTrackerTextConverter {
 
-  /** Semitones added to every parsed pitch; FamiTracker C-4 = MIDI 60. */
-  private static final int OCTAVE_OFFSET = 0;
+  /**
+   * Semitones added to every parsed pitch. NSFImport-style captures label
+   * notes one octave BELOW scientific pitch  proven by the Surf City
+   * export, whose pulse 1 shows "C-1": a 2A03 pulse bottoms out at ~55 Hz,
+   * so that row can only be sci C2 (65.4 Hz). Its answer phrase ("C-4")
+   * and chime ("D#3") likewise matched our ear-verified C5/DS4 exactly.
+   * +12 maps labels to true MIDI. For a hand-authored .ftm (not an
+   * NSFImport capture), set this back to 0 and verify by ear.
+   */
+  private static final int OCTAVE_OFFSET = 12;
 
   private static final int CHANNELS = 5;   // 2A03: p1, p2, tri, noise, dpcm
   private static final String[] CH_LABEL = {"p1", "p2", "tri", "noi", "dpcm"};
@@ -193,7 +201,7 @@ public class FamiTrackerTextConverter {
       if (tok.length >= 1) {
         cell.note = tok[0];
       }
-      // tok[1] is the instrument column — ignored (envelopes not converted)
+      // tok[1] is the instrument column  ignored (envelopes not converted)
       if (tok.length >= 3 && !tok[2].equals(".")) {
         cell.volume = Integer.parseInt(tok[2], 16);
       }
@@ -219,7 +227,17 @@ public class FamiTrackerTextConverter {
     return (int) Math.round(row * framesPerRow());
   }
 
-  /** Flatten one channel-column of one pattern into notes and rests. */
+  /**
+   * Flatten one channel-column of one pattern into notes and rests.
+   *
+   * The volume column is part of the music, not decoration: NSF drivers
+   * gate held notes with volume writes (echo ghosts, tremolo chops  the
+   * Follin shimmer is v3/v0 flips on a sustained pitch). So a volume write
+   * on a note-less row SPLITS the current note into a new segment at the
+   * new level, re-attacking the same pitch. In this synth that re-attack is
+   * click-free (the channel's phase never resets; only the envelope is set),
+   * so the result is exactly a hardware volume-register write.
+   */
   private List<Ev> events(int patternId, int channel) {
     Cell[][] rows = patterns.get(patternId);
     List<Ev> evs = new ArrayList<Ev>();
@@ -230,26 +248,32 @@ public class FamiTrackerTextConverter {
     for (int r = 0; r < patternLength; ++r) {
       Cell cell = (rows == null) ? null : rows[r][channel];
       String note = (cell == null) ? "..." : cell.note;
-      if (note.equals("...")) {
-        continue;                                   // current note/rest holds
+      int vol = (cell == null) ? -1 : cell.volume;
+      boolean newNote = !note.equals("...");
+      boolean volSplit = !newNote && vol >= 0 && vol != curVol;
+      if (!newNote && !volSplit) {
+        continue;                                   // current segment holds
       }
       int at = rowStart(r);
       if (at > curStart) {
         evs.add(new Ev(curMidi, at - curStart, curVol, curComment));
+        curStart = at;
       }
-      curStart = at;
-      curVol = -1;
-      curComment = null;
-      if (note.equals("---") || note.equals("===")) {
-        curMidi = -1;                               // halt / release -> rest
-      } else if (note.endsWith("-#")) {             // noise pitch, 0-F
-        int p = Integer.parseInt(note.substring(0, 1), 16);
-        curMidi = noiseBucket(p);
-        curComment = "noise " + note.charAt(0);
-        curVol = (cell != null) ? cell.volume : -1;
-      } else {
-        curMidi = midiOf(note);
-        curVol = (cell != null) ? cell.volume : -1;
+      if (newNote) {
+        if (note.equals("---") || note.equals("===")) {
+          curMidi = -1;                             // halt / release -> rest
+          curComment = null;
+        } else if (note.endsWith("-#")) {           // noise pitch, 0-F
+          int p = Integer.parseInt(note.substring(0, 1), 16);
+          curMidi = noiseBucket(p);
+          curComment = "noise " + note.charAt(0);
+        } else {
+          curMidi = midiOf(note);
+          curComment = null;
+        }
+      }
+      if (vol >= 0) {
+        curVol = vol;                               // persists until rewritten
       }
     }
     if (total > curStart) {
@@ -437,10 +461,10 @@ public class FamiTrackerTextConverter {
       case 'A': return "volume slide Axy -> approximate with withVolume steps";
       case 'B': case 'C': case 'D':
         warnings.add("flow effect " + fx + " present; ORDER assumed linear");
-        return "pattern-flow effect — VERIFY section order by ear";
+        return "pattern-flow effect  VERIFY section order by ear";
       case 'F':
         warnings.add("speed/tempo change " + fx + " mid-song is NOT converted");
-        return "speed/tempo change — durations after this row are WRONG";
+        return "speed/tempo change  durations after this row are WRONG";
       case 'G': return "note delay Gxx -> shift the note by xx frames";
       case 'P': return "fine pitch Pxx -> usually ignorable";
       case 'Q': return "note slide up Qxy -> withSlide";

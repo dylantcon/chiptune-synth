@@ -55,6 +55,7 @@ public interface ChiptuneSong {
   // octave 6 - high decoration
   public static final int C6 = 84, CS6 = 85, D6 = 86, DS6 = 87;
   public static final int E6 = 88, F6 = 89, FS6 = 90, G6 = 91;
+  public static final int GS6 = 92, A6 = 93, AS6 = 94, B6 = 95;
 
   // octave 7 - extreme highs (used for cymbal noise pitch)
   public static final int C7 = 96;
@@ -109,5 +110,22 @@ public interface ChiptuneSong {
    */
   default double getTempoScale() {
     return 1.0;
+  }
+
+  /**
+   * Frame the song re-enters when its tracks wrap around  the NSF-style
+   * loop point. 0 (the default) loops the whole song. A song with a
+   * play-once head (an intro) returns the head's length in frames; the
+   * synth applies the same point to all four tracks, so the channels jump
+   * together by construction and the aligned-totals invariant carries over
+   * unchanged. The point must land on a note boundary in every track 
+   * build the head from whole bars and this holds automatically (a
+   * mid-note point snaps forward to the next boundary, see
+   * Track.loopCursor).
+   *
+   * @return loop re-entry point in frames from the top of the song
+   */
+  default int getLoopStartFrames() {
+    return 0;
   }
 }

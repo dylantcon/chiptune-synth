@@ -22,7 +22,9 @@ public interface MusicHandler {
     ContraJungleMusicHandler.class,
     SurfCityMusicHandler.class,
     HyruleTempleMusicHandler.class,
-    DuckTalesMoonMusicHandler.class
+    DuckTalesMoonMusicHandler.class,
+    ZeldaDungeonMusicHandler.class,
+    SilverSurferMusicHandler.class
   };
 
   public void startMusic();
@@ -37,14 +39,16 @@ public interface MusicHandler {
 
   public double getSpeed();
 
-  /** Jump playback to a fraction (0..1) of the song's loop. */
+  /** Jump playback to a fraction (0..1) of the song's loop.
+   * @param fraction */
   public void seek(double fraction);
 
-  /** Wall-clock seconds for one loop at the current speed. */
+  /** Wall-clock seconds for one loop at the current speed.
+   * @return  */
   public double getDurationSeconds();
 
   /**
-   * "M:SS.D" — one decimal, matching the synth's honest 1-frame resolution.
+   * "M:SS.D"  one decimal, matching the synth's honest 1-frame resolution.
    * A formatter, not state: seconds must be computed where speed and
    * tempoScale are known (getDurationSeconds), never stored on a Track,
    * whose only truthful unit is the frame.
@@ -58,7 +62,8 @@ public interface MusicHandler {
     return String.format("%d:%04.1f", m, r - m * 60);
   }
 
-  /** Register for device-clock-grounded playback-position callbacks. */
+  /** Register for device-clock-grounded playback-position callbacks.
+   * @param l */
   public void addSynthListener(chiptunesynth.ChiptuneSynthListener l);
 
   public abstract String getMusicType();

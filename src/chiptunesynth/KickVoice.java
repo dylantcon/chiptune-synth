@@ -7,7 +7,7 @@ package chiptunesynth;
 /**
  * A dedicated kick-drum voice: a sine whose pitch sweeps fast from ~150 Hz
  * down to ~40 Hz while its amplitude decays just as fast. That downward
- * "boom" sweep is exactly how the NES faked a kick — Battletoads used the
+ * "boom" sweep is exactly how the NES faked a kick  Battletoads used the
  * triangle channel (or DPCM) for it. Spectral analysis of the original Surf
  * City showed ~25% of the energy is sub-150 Hz; the noise channel has no
  * tonal low end and physically cannot produce that thud, which is why our
@@ -30,10 +30,10 @@ class KickVoice {
   // DPCM-style lo-fi: emit a new value only every CRUSH samples (sample-and-
   // hold at ~11 kHz) and round it to a coarse amplitude staircase. The real
   // Battletoads/Contra drums were delta-encoded samples played back at rates
-  // like this, and the stair-step grit is most of their character — a clean
+  // like this, and the stair-step grit is most of their character  a clean
   // 44.1 kHz sine reads as "synth", not "sampled drum". Set CRUSH = 1 for
   // the clean voice.
-  private static final int CRUSH = 4;        // 44100/4 ≈ 11 kHz hold rate
+  private static final int CRUSH = 4;        // 44100/4  11 kHz hold rate
   private static final double LEVELS = 31;   // ~5-bit amplitude staircase
   private int crushPhase = 0;
   private double held = 0;

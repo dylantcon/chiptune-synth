@@ -14,11 +14,11 @@ import javax.swing.Timer;
 
 /**
  * The live position control: a custom-painted scrubber that follows
- * playback in real time and seeks on release. No JSlider — its integer
+ * playback in real time and seeks on release. No JSlider  its integer
  * model and chunky thumb geometry fight both live-following and pixel-wise
  * scrubbing, so this paints its own track and handles its own mouse.
  *
- * HONEST PRECISION, by design: the readout leads with the musical FRAME —
+ * HONEST PRECISION, by design: the readout leads with the musical FRAME 
  * the one value that is exact by construction (integer sequencer steps,
  * grounded on the audio device's sample clock by SongChronometer). Percent
  * and seconds are shown to one decimal each, at or below the true

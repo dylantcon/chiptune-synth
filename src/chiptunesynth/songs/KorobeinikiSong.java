@@ -55,12 +55,12 @@ public class KorobeinikiSong implements ChiptuneSong {
     Track harmony = new Track().withDefaults(HARMONY_VOL, HARMONY_DUTY);
 
     // Two sustained chord tones (root, then a colour tone) per 96-frame lead
-    // phrase — the plain inner voice the original used, just stretched so each
+    // phrase  the plain inner voice the original used, just stretched so each
     // chord fills a whole phrase. NO arpeggio: cycling the chord tones every
     // frame read as a sci-fi "laser" warble, so we hold real tones instead.
     // 12 phrases x (H + H) = 1152 frames, locked to the lead. Progression:
     // Am E7 Am Am Dm Am E7 Am under the A-theme, then Am G F E7 under the
-    // descending B-theme — one chord per phrase, finally aligned to the melody.
+    // descending B-theme  one chord per phrase, finally aligned to the melody.
     harmony.addNotes(
         A3, H, E4, H,    // phrase 1   Am
         E3, H, GS3, H,   // phrase 2   E7
@@ -93,7 +93,7 @@ public class KorobeinikiSong implements ChiptuneSong {
     // (played twice) so every chord spans a full 96-frame lead phrase, matching
     // the stretched harmony; the B-section already ran two patterns per chord.
     // 24 patterns x 48 = 1152 frames, locked to the lead. (See getHarmony's
-    // ALIGNMENT note — the old 16-pattern / 768-frame backing drifted 3:2.)
+    // ALIGNMENT note  the old 16-pattern / 768-frame backing drifted 3:2.)
     int[][] barPatterns = {
       amBass, amBass, e7Bass, e7Bass, // phrases 1-2  Am  E7
       amBass, amBass, amBass, amBass, // phrases 3-4  Am  Am

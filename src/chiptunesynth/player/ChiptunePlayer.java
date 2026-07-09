@@ -29,7 +29,7 @@ import javax.swing.SwingUtilities;
  * Standalone test player for the ChiptuneSynth song repertoire.
  *
  * The track list is discovered through {@link MusicHandler#concretized}, and
- * all playback goes through the MusicHandler interface — so running this jar
+ * all playback goes through the MusicHandler interface  so running this jar
  * exercises exactly the surface a game integrating the library would use.
  *
  * Run with no arguments for the Swing UI, or:
@@ -56,7 +56,7 @@ public class ChiptunePlayer {
 
   /**
    * Instantiate one handler per concrete class registered on the interface.
-   * Reflection keeps this list in sync with MusicHandler.concretized — adding
+   * Reflection keeps this list in sync with MusicHandler.concretized  adding
    * a song to the library means adding it there, and the player picks it up.
    */
   private static List<MusicHandler> buildRepertoire() {
@@ -124,7 +124,7 @@ public class ChiptunePlayer {
             v -> "Speed: " + v + "%");
     // the live position scrubber. Readout leads with the FRAME (exact by
     // construction); percent and seconds show one decimal each, at or below
-    // the true 1-frame resolution — no fake precision.
+    // the true 1-frame resolution  no fake precision.
     final PositionSliderPanel posPanel = new PositionSliderPanel((pos, total) -> {
       if (total <= 0) {
         return "Position: --";
@@ -157,7 +157,7 @@ public class ChiptunePlayer {
     JButton pauseBtn = new JButton("Pause");
     JButton rewindBtn = new JButton("Rewind");
 
-    // monospace across the player — commit to the retro look
+    // monospace across the player  commit to the retro look
     Font mono = new Font(Font.MONOSPACED, Font.BOLD, 12);
     playBtn.setFont(mono);
     pauseBtn.setFont(mono);
@@ -231,7 +231,7 @@ public class ChiptunePlayer {
     listAnchor.add(trackList, BorderLayout.NORTH);
     frame.add(new JScrollPane(listAnchor), BorderLayout.CENTER);
     frame.add(south, BorderLayout.SOUTH);
-    frame.setSize(380, 560);   // room for the three readout slider panels
+    frame.setSize(800, 600);   // room for the three readout slider panels
     frame.setLocationRelativeTo(null);
     frame.setVisible(true);
   }
@@ -277,7 +277,7 @@ public class ChiptunePlayer {
   }
 
   /**
-   * The repertoire view: an Nx2 grid of rows — title cell flowing left,
+   * The repertoire view: an Nx2 grid of rows  title cell flowing left,
    * runtime cell flowing right, one JLabel per cell. Runtimes (at 100%
    * speed) sit in placeholder grey as reference info. Click selects a row,
    * double-click activates it via the handler the caller installs.

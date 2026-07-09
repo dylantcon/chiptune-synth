@@ -14,7 +14,7 @@ package chiptunesynth;
  *
  * The plain noise channel can only do the second half, which is why a one-burst
  * snare sounds thin next to Konami's sampled Contra snare. Splitting it into its
- * own voice — exactly like KickVoice — lets the snare cut through a dense
+ * own voice  exactly like KickVoice  lets the snare cut through a dense
  * arrangement without stealing the noise channel from the hats.
  *
  * trigger(velocity)/tickFrame() are driven by the synth's 60 Hz sequencer;

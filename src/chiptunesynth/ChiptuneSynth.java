@@ -33,7 +33,7 @@ public class ChiptuneSynth implements Runnable {
   public static final int SAMPLES_PER_FRAME = SAMPLE_RATE / FRAME_RATE;
 
   // convert a midi note number to frequency in Hz. A4 = 69 = 440Hz.
-  // the double overload keeps modulated (fractional) pitches in tune —
+  // the double overload keeps modulated (fractional) pitches in tune 
   // vibrato/slide/arp land on pitches between the integer semitones.
   public static double freqOf(double midi) {
     return 440.0 * Math.pow(2.0, (midi - 69) / 12.0);
@@ -74,7 +74,7 @@ public class ChiptuneSynth implements Runnable {
   private volatile double tempoScale = 1.0;
   private double sequencerAccumulator = 0;
 
-  // musical frames consumed since the song's frame 0 — an exact integer
+  // musical frames consumed since the song's frame 0  an exact integer
   // count of sequencer steps, adjusted by seek/rewind. Written by the audio
   // thread (increments) and by seek/rewind (absolute sets); a lost increment
   // in that race costs one frame of readout, never audio.
@@ -137,6 +137,14 @@ public class ChiptuneSynth implements Runnable {
             song.getDrums()
     );
     this.tempoScale = song.getTempoScale();
+    // one loop point stamped onto all four tracks: the channels wrap
+    // together by construction (a per-track point could never drift less
+    // than a whole loop out of alignment)
+    int loopStart = song.getLoopStartFrames();
+    if (p1Track != null) p1Track.setLoopStart(loopStart);
+    if (p2Track != null) p2Track.setLoopStart(loopStart);
+    if (triTrack != null) triTrack.setLoopStart(loopStart);
+    if (noiTrack != null) noiTrack.setLoopStart(loopStart);
     return this;
   }
 
@@ -158,7 +166,7 @@ public class ChiptuneSynth implements Runnable {
     if (t.framesLeft <= 0) {
       if (t.cursor >= t.notes.size()) {
         if (looping) {
-          t.cursor = 0;
+          t.cursor = t.loopCursor();   // NSF-style: wrap past the head
         } else {
           return null;
         }
@@ -275,6 +283,13 @@ public class ChiptuneSynth implements Runnable {
             } else if (nd.midi == ChiptuneSong.CYMBAL) {
               // open hi-hat / crash: long broadband wash
               noi.noteOn(midiToFreq(nd.midi) * 8, nd.volume, 7.0, false);
+            } else if (nd.decay == ChiptuneSong.SUSTAINED) {
+              // pitched noise, held: raw LFSR at the note's pitch with no
+              // decay. Back-to-back notes re-attack seamlessly (the LFSR and
+              // envelope never dip), so a run of these is one continuous
+              // roar stepping in pitch  the NES noise-sweep texture
+              // (Silver Surfer's head), which a percussive tom can't make.
+              noi.noteOn(midiToFreq(nd.midi) * 8, nd.volume, 0.0, false);
             } else {
               // any other pitched noise note is a tom (e.g. Contra's C3 fills);
               // play it at its written pitch on the tuned tom voice.
@@ -359,7 +374,10 @@ public class ChiptuneSynth implements Runnable {
   }
 
   // wrap the running frame counter into the song and tell the listeners;
-  // the lead track's length is the canonical loop (the aligned invariant)
+  // the lead track's length is the canonical loop (the aligned invariant).
+  // With a loop point set, the first pass covers [0, total) and every pass
+  // after cycles [loopStart, total)  the head plays once, and the readout
+  // says so honestly.
   private void notifyPosition(long audibleFrame) {
     if (listeners.isEmpty() || p1Track == null) {
       return;
@@ -368,14 +386,21 @@ public class ChiptuneSynth implements Runnable {
     if (total <= 0) {
       return;
     }
-    int frame = (int) (((audibleFrame % total) + total) % total);
+    int loopStart = p1Track.loopStartFrames();
+    int span = total - loopStart;
+    int frame;
+    if (audibleFrame < total || loopStart <= 0 || span <= 0) {
+      frame = (int) (((audibleFrame % total) + total) % total);
+    } else {
+      frame = loopStart + (int) ((audibleFrame - total) % span);
+    }
     for (ChiptuneSynthListener l : listeners) {
       l.playbackPosition(frame, total);
     }
   }
 
   /**
-   * Jump playback to a fraction (0..1) of the song — the dev "pan" control.
+   * Jump playback to a fraction (0..1) of the song  the dev "pan" control.
    * Each track chases its own state (see Track.seek), so a note sustaining
    * across the target keeps sounding instead of dropping to silence. The
    * channels are silenced first so nothing rings over from the old position;

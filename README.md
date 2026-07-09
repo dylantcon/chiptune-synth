@@ -13,11 +13,11 @@ standalone library.
 - Dedicated kick, snare, and tom percussion voices that punch through the mix
 - Note effects: portamento (slide), vibrato, arpeggio, pitch envelopes, and
   amplitude swells
-- A frame-rate sequencer driving all channels at ~60 Hz — the same rate the
+- A frame-rate sequencer driving all channels at ~60 Hz  the same rate the
   NES ticked its music engine via the NMI handler; note durations are measured
   in frames (60ths of a second), exactly the unit the original NES drivers used
 - Runtime volume (with slew) and playback-speed control
-- 44.1 kHz / 16-bit / stereo output via `javax.sound.sampled` — no native code,
+- 44.1 kHz / 16-bit / stereo output via `javax.sound.sampled`  no native code,
   no external dependencies
 
 ## Usage
@@ -48,4 +48,4 @@ ant jar
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT  see [LICENSE](LICENSE).

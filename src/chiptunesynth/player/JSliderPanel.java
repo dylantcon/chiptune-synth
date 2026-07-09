@@ -8,7 +8,7 @@ import javax.swing.JSlider;
 import javax.swing.event.ChangeListener;
 
 /**
- * A SliderPanel backed by a stock JSlider — tick marks, min/mid/max scale
+ * A SliderPanel backed by a stock JSlider  tick marks, min/mid/max scale
  * labels, and the readout from AbstractSliderPanel. Serves the controls
  * whose values are exact integers (volume %, speed %), where a JSlider's
  * granularity is the true granularity.

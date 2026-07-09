@@ -3,7 +3,7 @@ package chiptunesynth;
 /**
  * Observer of the synth's playback position. Notifications are grounded on
  * the audio DEVICE's clock (see SongChronometer), so the reported frame is
- * what is audible at the speakers right now — not where the sequencer has
+ * what is audible at the speakers right now  not where the sequencer has
  * rendered ahead to.
  *
  * Called from the synth's audio thread roughly 60 times per second. Keep

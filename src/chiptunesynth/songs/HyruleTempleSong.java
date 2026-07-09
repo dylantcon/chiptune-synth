@@ -177,8 +177,8 @@ public class HyruleTempleSong implements ChiptuneSong {
    * = the chord's slash/bass note, harmony pad = a chord tone chosen to
    * define quality without clashing the lead). Key center is G minor.
    *
-   *   intro      : gm  Eb/G  e°/G  Eb/G  gm  | Bb Am Ab   (6 bars)
-   *   verse      : gm  Eb/G  e°/G  Eb/G        (4-bar cell x2, G pedal)
+   *   intro      : gm  Eb/G  e/G  Eb/G  gm  | Bb Am Ab   (6 bars)
+   *   verse      : gm  Eb/G  e/G  Eb/G        (4-bar cell x2, G pedal)
    *   pre-chorus : D ... D7 ... D7b9           (dominant pedal, 8 bars)
    *   chorus     : D7 D7  fm7 fm7  D7 D7  D/F# D/F# D   (9 bars)
    *   bridge     : gm gm  fm fm  em em  fm fm           (8 bars)
@@ -254,7 +254,7 @@ public class HyruleTempleSong implements ChiptuneSong {
     return t;
   }
 
-  // intro bass: held G pedal for bars 1-5 (gm / Eb/G / e°/G all sit on G),
+  // intro bass: held G pedal for bars 1-5 (gm / Eb/G / e/G all sit on G),
   // then the Bb-Am-Ab descent of bar 6, matching the lead.
   private static Track getBassIntro() {
     Track t = new Track().withDefaults(BASS_VOL, BASS_DUTY).withDecay(SUSTAINED);
@@ -263,7 +263,7 @@ public class HyruleTempleSong implements ChiptuneSong {
     return t;
   }
 
-  // intro pad: a Bb held under the G-pedal bars (common to gm/Eb/e°),
+  // intro pad: a Bb held under the G-pedal bars (common to gm/Eb/e),
   // then chromatic parallel-4ths under the lead's Bb-A-Ab in bar 6.
   private static Track getHarmonyIntro() {
     Track t = new Track().withDefaults(HARMONY_VOL, HARMONY_DUTY)

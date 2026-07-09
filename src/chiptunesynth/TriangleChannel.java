@@ -24,7 +24,7 @@ class TriangleChannel {
     this.active = true;
   }
 
-  // mid-note pitch update (phase preserved) — lets the bass slide and
+  // mid-note pitch update (phase preserved)  lets the bass slide and
   // vibrato the same way the pulse channels do.
   void setFrequency(double frequency) {
     this.freq = frequency;

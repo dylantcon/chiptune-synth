@@ -11,15 +11,15 @@ import chiptunesynth.Track;
  * are loops, variation rules are conditionals, and the harmonic plan is data.
  * Sounding registers were kept from the rip's octave-corrected mix.
  *
- * FORM — one pass is 29 bars, matching the original recording's 57.31 s loop:
+ * FORM  one pass is 29 bars, matching the original recording's 57.31 s loop:
  *
  *   HOOK   8 bars   four 2-bar statements: C, C, F, C. Bar 1 is the surf
  *                   hook (root root root b3 4 | 5 5 4 b3 4), bar 2 is two
- *                   pickup 16ths and the swelled "chime" — the lead borrows
+ *                   pickup 16ths and the swelled "chime"  the lead borrows
  *                   its own dead air for the chime (one channel, two voices:
  *                   the rip's lendFifth trick, kept on purpose) while pulse 2
  *                   swells an Ab underneath and sparkles root+3rd.
- *   TURN   1 bar    Bb-Bb-Bb-F(held) / Eb Eb Eb Eb F F — tips into the chug.
+ *   TURN   1 bar    Bb-Bb-Bb-F(held) / Eb Eb Eb Eb F F  tips into the chug.
  *   CHUG   8 bars   sixteen half-bar cells of the low 16th-note riff: bottom
  *                   note walks G / Ab / Bb / Ab under a fixed C-D-Eb-G-Eb-D-Eb
  *                   figure. Pass 1 plays it as the BUILD-UP into the chorus:
@@ -29,14 +29,21 @@ import chiptunesynth.Track;
  *                   the kit stacks up two bars at a time, and an ascending
  *                   C-Eb-F-G bass run + fill make the chorus downbeat land
  *                   like an arrival.
- *   CNR    8 bars   call & response, four 2-bar cells: lead states the hook
- *                   bar low (C3); after a fat breath (an eighth plus a 16th)
- *                   pulse 2 answers an octave up (C5-Bb4 / G G F Eb F).
+ *   CNR    8 bars   the dialogue, transcribed from the FamiTracker export:
+ *                   pulse 1 carries BOTH voices  the call (the hook figure
+ *                   with roots dropped to the low octave, uppers fixed at
+ *                   Eb4-G4) and the answer (C5-Bb4 / G G F Eb F, entering
+ *                   an eighth into the bar)  and fills every hole with a
+ *                   low root poke or a 40% ghost; the channel never rests.
+ *                   Pulse 2 shadows a third below and bounces its root.
+ *                   Only the LOW roots move: C | C, then Bb | Ab per pair
+ *                   of cells. The kit drops out; the triangle re-strikes a
+ *                   held root on a loose clave whose long hold wanders.
  *   CODA   4 bars   the hook figure spread wide: lead at C3-C4, pulse 2
  *                   doubling an octave up, bass dropping to whole-note
  *                   C2 C2 Bb1 Ab1 slides. Ab resolves back to the hook's C.
  *
- * The song plays TWO passes (58 bars, ~114.6 s — twice the original loop).
+ * The song plays TWO passes (58 bars, ~114.6 s  twice the original loop).
  * Pass 1 is the faithful arrangement; pass 2 is the same music developed the
  * way Wise developed his repeats:
  *
@@ -48,12 +55,12 @@ import chiptunesynth.Track;
  *   CHUG   already at full tilt (the build-up belongs to pass 1), pulse 2
  *          plays C-minor arp stabs (withArp 0,3,7) on the off-beats, and
  *          the last four cells lift the riff an octave.
- *   CNR    pulse 2 does double duty: echoes the call in bar 1, answers in
- *          bar 2. Drums move to 16th-note hats.
+ *   CNR    plays as in pass 1  the original repeats the dialogue verbatim;
+ *          only the lead's fatter horn voice carries over.
  *   CODA   drums drop to half-time, then a snare/tom fill turns the loop
  *          around; bass climbs Ab1-Bb1-B1-C2 back into the hook.
  *
- * TEMPO — the original runs 29 bars in 57.31 s = 121.4 BPM. The house grid
+ * TEMPO  the original runs 29 bars in 57.31 s = 121.4 BPM. The house grid
  * (96-frame bars) is 150 BPM at 60 fps, so scale = 121.4 / 150.
  *
  * @author dylan
@@ -68,7 +75,7 @@ public class SurfCitySong implements ChiptuneSong {
   /* === VOICES / MIX === */
   private static final double CHIME_VOL   = 0.30;
   // pass-2 "horn" lead: fatter than the 0.205 verse voice, but 0.499 at full
-  // lead volume honked — 35% duty and a touch less level keeps the timbre
+  // lead volume honked  35% duty and a touch less level keeps the timbre
   // shift without the aggression
   private static final double P2_LEAD_VOL  = 0.63;
   private static final double P2_LEAD_DUTY = 0.35;
@@ -78,6 +85,10 @@ public class SurfCitySong implements ChiptuneSong {
   private static final int    ECHO_DELAY = 3 * S;
   private static final double ECHO_VOL   = 0.50;
   private static final double ECHO_DUTY  = 0.125;
+
+  // the driver's own per-note echo, measured from the export's CNR: a v5
+  // attack rings, then a v2 ghost of the same pitch blips one 16th later
+  private static final double GHOST_VOL = 0.40;
 
   private static final double KICK_VOL  = 0.90;  // KickVoice ignores this
   private static final double SNARE_VOL = 0.60;
@@ -96,6 +107,26 @@ public class SurfCitySong implements ChiptuneSong {
 
   private static void e8(Track t, int p) {
     t.addNotes(p, 5, R, 7);
+  }
+
+  /* CNR-only articulation (see the CNR block below): the export never lets
+   * a channel sit silent there, so eighths ghost and empty 16ths get a low
+   * root thump. */
+
+  // a 16th slot carrying only the 40% ghost blip of pitch p
+  private static void ghost(Track t, int p, double vol) {
+    t.withVolume(vol * GHOST_VOL).addNotes(p, 2, R, 4).withVolume(vol);
+  }
+
+  // an eighth with the export's ghost: stab, breath, blip on the back half
+  private static void e8g(Track t, int p, double vol) {
+    t.addNotes(p, 5, R, 1);
+    ghost(t, p, vol);
+  }
+
+  // a 16th slot carrying a low root thump  the register-split bounce
+  private static void poke(Track t, int p) {
+    t.addNotes(p, 3, R, 3);
   }
 
   private static Track lead(double vol, double duty) {
@@ -134,7 +165,7 @@ public class SurfCitySong implements ChiptuneSong {
 
   private static final int[] HOOK_ROOTS = {C3, C3, F3, C3};
 
-  // withChime=false yields the pure melody — the echo source for pass 2
+  // withChime=false yields the pure melody  the echo source for pass 2
   private static Track leadHook(boolean withChime, double vol, double duty) {
     Track t = lead(vol, duty);
     for (int root : HOOK_ROOTS) {
@@ -195,18 +226,58 @@ public class SurfCitySong implements ChiptuneSong {
     return t;
   }
 
-  // the call is hook bar 1 alone — used by the lead and echoed by pulse 2
-  private static Track callBar() {
-    Track t = lead(LEAD_VOL, LEAD_DUTY);
-    hookBar(t, C3);
-    return t;
+  /* === CNR  transcribed from the FamiTracker export ===
+   *
+   * Pulse 1 carries the WHOLE dialogue: the call is the hook figure with
+   * its roots dropped to the low octave (uppers fixed at Eb4-G4), the
+   * answer follows on the same channel, and every hole is filled with a
+   * low root poke (16th slots 6/11/14 of the call, 0/6/14 of the answer)
+   * or a ghost (slots 1/8/15)  the channel never rests. The harmonic
+   * plan walks the LOW ROOTS only, the figure stays put:
+   * cells 1/3 sit on C, cells 2/4 move Bb (call) then Ab (answer). */
+
+  private static final int[] CNR_CALL_LOW = {C2, AS2, C2, AS2};
+  private static final int[] CNR_ANS_LOW  = {C2, GS2, C2, GS2};
+
+  // low low low b3 4 | 5 5 4 b3 4  roots low, pokes in the holes
+  private static void cnrCallBar(Track t, int low, double vol) {
+    e8g(t, low, vol);
+    s16(t, low);
+    s16(t, low);
+    s16(t, DS4);
+    s16(t, F4);
+    poke(t, low);
+    e8g(t, G4, vol);
+    s16(t, G4);
+    s16(t, F4);
+    poke(t, low);
+    s16(t, DS4);
+    s16(t, F4);
+    poke(t, low);
+    ghost(t, low, vol);
+  }
+
+  // the answer enters an EIGHTH into the bar (export, both loops), with
+  // the Bb held a dotted eighth  root poke on the downbeat under it
+  private static void cnrAnswerBar(Track t, int low, double vol) {
+    e8g(t, low, vol);
+    e8g(t, C5, vol);
+    e8g(t, AS4, vol);
+    poke(t, low);
+    e8g(t, G4, vol);
+    s16(t, G4);
+    e8g(t, F4, vol);
+    s16(t, DS4);
+    s16(t, F4);
+    poke(t, low);
+    ghost(t, low, vol);
   }
 
   private static Track leadCnr(double vol, double duty) {
     Track t = lead(vol, duty);
     for (int cell = 0; cell < 4; ++cell) {
-      hookBar(t, C3);                    // call...
-      t.addNotes(R, W);                  // ...pulse 2 owns the answer bar
+      cnrCallBar(t, CNR_CALL_LOW[cell], vol);
+      cnrAnswerBar(t, CNR_ANS_LOW[cell], vol);
     }
     return t;
   }
@@ -239,8 +310,8 @@ public class SurfCitySong implements ChiptuneSong {
   public Track getLead() {
     Track t = new Track().withDefaults(LEAD_VOL, LEAD_DUTY);
     for (int pass = 1; pass <= 2; ++pass) {
-      // pass 2 fattens the melody's duty — the classic second-verse timbre
-      // switch on real 2A03 drivers — at a slightly relaxed level so the
+      // pass 2 fattens the melody's duty  the classic second-verse timbre
+      // switch on real 2A03 drivers  at a slightly relaxed level so the
       // fuller voice doesn't read as a blaring horn
       double vol = (pass == 1) ? LEAD_VOL : P2_LEAD_VOL;
       double duty = (pass == 1) ? LEAD_DUTY : P2_LEAD_DUTY;
@@ -282,7 +353,7 @@ public class SurfCitySong implements ChiptuneSong {
     return t;
   }
 
-  // pass 2 chug: C-minor arp stabs on the off-beats — one channel, three notes
+  // pass 2 chug: C-minor arp stabs on the off-beats  one channel, three notes
   private static Track harmonyChugStabs() {
     Track t = new Track().withDefaults(HARMONY_VOL, STAB_DUTY)
                          .withArp(0, 3, 7).withArpSpeed(2)
@@ -295,40 +366,54 @@ public class SurfCitySong implements ChiptuneSong {
     return t;
   }
 
-  // the answer: the hook's back half, an octave up, prefixed C5-Bb4 (the
-  // rip's written octave). It enters on the "and" of 1 — the eighth-note
-  // breath between call and answer is part of the original's phrasing
-  // (a quarter was too long; ear-tuned).
-  //
-  // The two rests are deliberately LOPSIDED, ~2.4:1: call ends 13 frames
-  // before the bar + 18 more before the answer enters (~31 frames of air),
-  // but the next call re-enters right on the downbeat (~13 frames of air).
-  // Both phrases end with the same stab-plus-breath tail; only the delayed
-  // entrance skews them. The extra 16th of lateness comes out of the Bb's
-  // slot, so from the G4 on, the phrase sits at the same groove position —
-  // only the entrance saunters. Keeping it uneven is what makes the beat
-  // lively instead of rigid — don't "fix" the asymmetry.
-  private static void respBar(Track t) {
-    t.addNotes(R, E + S);
-    e8(t, C5);
-    t.addNotes(AS4, 12);
-    e8(t, G4);
-    s16(t, G4);
-    e8(t, F4);
+  /* CNR pulse 2, from the export: shadows the figure a strict third below
+   * (C4-D4-Eb4 under Eb4-F4-G4, G4 under the answer's C5-Bb4) and bounces
+   * its own root in the holes  16th slots 0/3/6/11/14  with ghosts at
+   * 1/8/15. It never rests longer than a 16th. Roots follow the cells:
+   * C3 both bars, then Bb3 (call) / Ab3 (answer). */
+
+  private static final int[] CNR_P2_CALL_ROOT = {C3, AS3, C3, AS3};
+  private static final int[] CNR_P2_ANS_ROOT  = {C3, GS3, C3, GS3};
+
+  private static void cnrOstCallBar(Track t, int root) {
+    e8g(t, root, HARMONY_VOL);
+    s16(t, C3);                          // slot 2 stays C3 in every cell
+    s16(t, root);
+    s16(t, C4);
+    s16(t, D4);
+    s16(t, root);
+    e8g(t, DS4, HARMONY_VOL);
     s16(t, DS4);
-    t.addNotes(F4, 5, R, 13);
+    s16(t, D4);
+    s16(t, root);
+    s16(t, C4);
+    s16(t, D4);
+    e8g(t, root, HARMONY_VOL);
   }
 
-  private static Track harmonyCnr(int pass) {
-    Track t = harmony();
+  private static void cnrOstAnswerBar(Track t, int root) {
+    e8g(t, root, HARMONY_VOL);
+    e8g(t, G4, HARMONY_VOL);             // 4th/3rd under C5-Bb4
+    e8g(t, G4, HARMONY_VOL);
+    s16(t, root);
+    // the Eb sneaks in whispered a slot early, ghosts, then lands full
+    t.withVolume(HARMONY_VOL * GHOST_VOL);
+    s16(t, DS4);
+    t.addNotes(DS4, 2, R, 4);
+    t.withVolume(HARMONY_VOL);
+    s16(t, DS4);
+    e8g(t, D4, HARMONY_VOL);
+    s16(t, C4);
+    s16(t, D4);
+    e8g(t, root, HARMONY_VOL);
+  }
+
+  private static Track harmonyCnr() {
+    Track t = new Track().withDefaults(HARMONY_VOL, STAB_DUTY)
+                         .withVibrato(0.3, 5.5, 10);
     for (int cell = 0; cell < 4; ++cell) {
-      if (pass == 1) {
-        t.addNotes(R, W);
-      } else {
-        // double duty: shadow the call, then still make the answer in time
-        t.addNotes(Track.echoOf(callBar(), ECHO_DELAY, ECHO_VOL, ECHO_DUTY));
-      }
-      respBar(t);
+      cnrOstCallBar(t, CNR_P2_CALL_ROOT[cell]);
+      cnrOstAnswerBar(t, CNR_P2_ANS_ROOT[cell]);
     }
     return t;
   }
@@ -355,7 +440,7 @@ public class SurfCitySong implements ChiptuneSong {
          .addNotes(Track.echoOf(leadTurn(), ECHO_DELAY, ECHO_VOL, ECHO_DUTY))
          .addNotes(harmonyChugStabs());
       }
-      t.addNotes(harmonyCnr(pass))
+      t.addNotes(harmonyCnr())           // same both passes, per the export
        .addNotes(harmonyCoda());
     }
     return t;
@@ -382,7 +467,7 @@ public class SurfCitySong implements ChiptuneSong {
   }
 
   // the held root under the chime bar; pass 2 walks b3-4 up into the next
-  // statement (C: Eb-F, F: Ab-Bb — Bb leads the ear back to C)
+  // statement (C: Eb-F, F: Ab-Bb  Bb leads the ear back to C)
   private static void sustainBar(Track t, int root, int pass) {
     if (pass == 1) {
       t.addNotes(root, 40, R, 56);
@@ -416,23 +501,6 @@ public class SurfCitySong implements ChiptuneSong {
     return t;
   }
 
-  // syncopated pedal with a Bb neighbor and the Eb-F walk in the tail —
-  // the cell the rip used under both the chug and the call & response
-  private static void chugBassBar(Track t, int root) {
-    e8(t, root);
-    t.addNotes(R, S);
-    s16(t, root);
-    e8(t, root);
-    t.addNotes(R, S);
-    s16(t, root - 2);
-    e8(t, root);
-    t.addNotes(R, S);
-    s16(t, root);
-    e8(t, root);
-    s16(t, root + 3);
-    s16(t, root + 5);
-  }
-
   private static Track bassChug() {
     Track t = bass();
     for (int bar = 0; bar < 7; ++bar) {
@@ -442,7 +510,7 @@ public class SurfCitySong implements ChiptuneSong {
     return t;
   }
 
-  // the build-up's engine: no silent off-beats — a driving eighth-note pump
+  // the build-up's engine: no silent off-beats  a driving eighth-note pump
   // with an octave pop, the Bb dip, and the Eb-F walk. The sparser
   // chugBassBar stays under the call & response, where the dialogue needs
   // the room; here the bass is the hype.
@@ -463,16 +531,48 @@ public class SurfCitySong implements ChiptuneSong {
     }
   }
 
+  /* CNR triangle, from the export: a held root re-struck on a loose clave,
+   * transcribed bar-for-bar. The long hold WANDERS  beats 3-4 in the first
+   * call bar, beats 1-3 in the cell-2 answer  and that wander is the feel;
+   * don't regularize it. Roots follow the cells: C3 | C3, Bb3 | Ab3. */
+
+  private static final int[][] CNR_BASS_SLOTS = {
+    {0, 3, 5, 8, 10, 15},                // cell 1 call    (C3)
+    {1, 3, 6, 8, 11, 13, 15},            // cell 1 answer  (C3)
+    {0, 4, 7, 9, 11, 14},                // cell 2 call    (Bb3)
+    {0, 2, 10, 12, 14},                  // cell 2 answer  (Ab3)  big hold
+    {0, 1, 3, 5, 8, 13, 15},             // cell 3 call    (C3)
+    {1, 4, 6, 8, 11},                    // cell 3 answer  (C3)
+    {0, 2, 4, 7, 9, 12, 14},             // cell 4 call    (Bb3)
+    {0, 5, 7, 10, 12, 15},               // cell 4 answer  (Ab3)
+  };
+
+  private static final int[] CNR_BASS_ROOT =
+      {C3, C3, AS3, GS3, C3, C3, AS3, GS3};
+
   private static Track bassCnr() {
     Track t = bass();
-    for (int bar = 0; bar < 8; ++bar) {
-      chugBassBar(t, C3);
+    // each attack sustains to 3 frames shy of the next (the triangle's
+    // re-articulation gap), including across bar lines
+    int prevFrame = 0;
+    int prevPitch = CNR_BASS_ROOT[0];
+    for (int bar = 0; bar < CNR_BASS_SLOTS.length; ++bar) {
+      for (int slot : CNR_BASS_SLOTS[bar]) {
+        int frame = bar * W + slot * S;
+        if (frame == 0) {
+          continue;                      // first attack opens the section
+        }
+        t.addNotes(prevPitch, frame - prevFrame - T, R, T);
+        prevFrame = frame;
+        prevPitch = CNR_BASS_ROOT[bar];
+      }
     }
+    t.addNotes(prevPitch, 8 * W - prevFrame - T, R, T);
     return t;
   }
 
   private static Track bassCoda(int pass) {
-    // whole notes gliding down C2 C2 Bb1 Ab1 — the slide makes the triangle
+    // whole notes gliding down C2 C2 Bb1 Ab1  the slide makes the triangle
     // swoop between roots instead of stepping
     Track t = bass().withSlide(10);
     t.addNotes(C2, W, C2, W, AS1, W);
@@ -557,7 +657,7 @@ public class SurfCitySong implements ChiptuneSong {
     }
   }
 
-  // the pass-1 turnaround: a 16th snare roll that swells from nothing —
+  // the pass-1 turnaround: a 16th snare roll that swells from nothing 
   // per-hit withVolume as a crescendo, then the floor drops out (breakdown)
   private static void buildBar(Track t) {
     for (int i = 0; i < 16; ++i) {
@@ -583,6 +683,26 @@ public class SurfCitySong implements ChiptuneSong {
       double vol = (v == KICK) ? KICK_VOL : (v == SNARE) ? SNARE_VOL : 0.20;
       hit(t, v, vol, S);
     }
+  }
+
+  // the export drops the kit for the whole dialogue  the pulses and the
+  // triangle carry the 16ths. All that survives on noise is a bright tick
+  // into a loud boom, a pair that wanders through the section on its own
+  // ~2.5-bar cycle (transcribed positions, not bar-aligned on purpose)
+  private static void drumsCnr(Track t) {
+    t.addNotes(R, 2 * W);                          // cell 1: tacet
+    t.addNotes(R, 4);                              // cell 2 call...
+    hit(t, HIHAT, 0.33, 6);
+    hit(t, KICK, KICK_VOL, W - 10);
+    t.addNotes(R, W);                              // ...answer: tacet
+    t.addNotes(R, 52);                             // cell 3 call...
+    hit(t, HIHAT, 0.33, 6);
+    hit(t, KICK, KICK_VOL, W - 58);
+    t.addNotes(R, W);                              // ...answer: tacet
+    t.addNotes(R, W);                              // cell 4 call: tacet
+    t.addNotes(R, 10);                             // ...answer
+    hit(t, HIHAT, 0.33, 6);
+    hit(t, KICK, KICK_VOL, W - 16);
   }
 
   private static void halfTimeBar(Track t) {
@@ -621,7 +741,7 @@ public class SurfCitySong implements ChiptuneSong {
       } else {
         tomFillBar(t);
       }
-      // CHUG — pass 1 is the build-up: kick+hats, snare enters, double-kick,
+      // CHUG  pass 1 is the build-up: kick+hats, snare enters, double-kick,
       // 16ths, then a fill hurls it into the chorus. Pass 2 stays at full tilt.
       if (pass == 1) {
         kickHatsBar(t);
@@ -637,14 +757,9 @@ public class SurfCitySong implements ChiptuneSong {
           backbeat2Bar(t);
         }
       }
-      // CNR
-      for (int bar = 0; bar < 8; ++bar) {
-        if (pass == 1) {
-          backbeatBar(t);
-        } else {
-          groove16Bar(t);
-        }
-      }
+      // CNR  the kit sits out the dialogue in both passes (the original
+      // repeats it verbatim); the accents are all that's left
+      drumsCnr(t);
       // CODA
       for (int bar = 0; bar < 3; ++bar) {
         if (pass == 1) {

@@ -1,7 +1,7 @@
 package chiptunesynth;
 
 /**
- * The playback clock — maps the audio device's sample position onto the
+ * The playback clock  maps the audio device's sample position onto the
  * sequencer's musical position.
  *
  * Two truths this class encodes:
@@ -19,8 +19,8 @@ package chiptunesynth;
  *    written block corresponds to, so a device position can be looked up
  *    and answered with "this is the musical frame you are HEARING".
  *
- * All accounting is integer — samples and frames are counted, never summed
- * as fractional seconds — which is fixed-point arithmetic with the radix
+ * All accounting is integer  samples and frames are counted, never summed
+ * as fractional seconds  which is fixed-point arithmetic with the radix
  * parked at one block / one frame: zero accumulated error by construction.
  * The one irreducible float in the synth (the speed knob's fractional
  * accumulator) affects how fast frames are consumed, not this bookkeeping
@@ -29,7 +29,7 @@ package chiptunesynth;
  *
  * A pleasing consequence of device-clock grounding: right after a seek, the
  * reported position keeps walking through the OLD location for the ~4
- * blocks still queued in the buffer — because that is genuinely what is
+ * blocks still queued in the buffer  because that is genuinely what is
  * still coming out of the speakers.
  *
  * One instance per audio-thread run (the line, and thus its sample counter,

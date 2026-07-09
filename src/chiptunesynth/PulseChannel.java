@@ -53,13 +53,39 @@ class PulseChannel {
     if (envelope <= 0 || freq <= 0) {
       return 0;
     }
-    phase += freq / ChiptuneSynth.SAMPLE_RATE;
+    double dt = freq / ChiptuneSynth.SAMPLE_RATE;
+    phase += dt;
     if (phase >= 1.0) {
       phase -= 1.0;
     }
-    double s = (phase < duty ? 1.0 : -1.0) * envelope;
+    // band-limited pulse via polyBLEP: a naive square's edges spray
+    // harmonics past Nyquist that fold back as inharmonic aliases  at the
+    // 4-6 kHz fundamentals of a Follin cascade that garbage reads as a
+    // shrill "telephone" ring the hardware (1.79 MHz clock + analog path)
+    // never produces. Smoothing each edge over one sample kills it.
+    double s = (phase < duty ? 1.0 : -1.0);
+    s += polyBlep(phase, dt);                              // rising edge @ 0
+    double tf = phase - duty;
+    if (tf < 0) {
+      tf += 1.0;
+    }
+    s -= polyBlep(tf, dt);                                 // falling @ duty
+    s *= envelope;
     envelope = Math.max(0, envelope - envelopeDecay);
     return s;
   }
-  
+
+  // two-sample polynomial band-limited step residual (unit step of 2)
+  private static double polyBlep(double t, double dt) {
+    if (t < dt) {
+      t /= dt;
+      return t + t - t * t - 1.0;
+    }
+    if (t > 1.0 - dt) {
+      t = (t - 1.0) / dt;
+      return t * t + t + t + 1.0;
+    }
+    return 0.0;
+  }
+
 }

@@ -5,7 +5,7 @@
 package chiptunesynth;
 
 /**
- * An immutable, composable per-note modulation spec — the expressive
+ * An immutable, composable per-note modulation spec  the expressive
  * vocabulary the original Note model lacked. These are exactly the tricks
  * David Wise's NES drivers used to make a 2-channel square lead "sing":
  *
@@ -15,7 +15,7 @@ package chiptunesynth;
  *  - vibrato   : a pitch LFO; the late-onset wobble on held notes.
  *  - slide     : portamento; glide from the previous pitch into this one.
  *  - pitchEnv  : a one-shot pitch ramp toward 0 (scoops, zaps, drum sweeps).
- *  - swell     : a parabolic AMPLITUDE contour — soft fade in to a peak and
+ *  - swell     : a parabolic AMPLITUDE contour  soft fade in to a peak and
  *                back down. This is the one non-pitch tool here; it's what a
  *                "pad" needs. A flat-topped square that just switches on at
  *                full volume sounds like a telephone tone; the swell is the
@@ -135,7 +135,7 @@ public final class Effect {
    * Amplitude multiplier (0..1) at frame {@code f} of a note {@code dur}
    * frames long. With swell off this is a flat 1.0 (no change). With swell on
    * it is the parabola 4t(1-t), t = f/(dur-1): zero at both ends, 1.0 at the
-   * midpoint — the smooth bloom Wise's pads have.
+   * midpoint  the smooth bloom Wise's pads have.
    *
    * @param f   frames elapsed since the note started (0 on the first frame)
    * @param dur the note's total duration in frames
