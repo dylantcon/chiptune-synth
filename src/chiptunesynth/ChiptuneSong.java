@@ -69,6 +69,32 @@ public interface ChiptuneSong {
   public static final int HIHAT = 84;   // = C6  - crisp tick
   public static final int CYMBAL = 96;   // = C7  - bright wash
 
+  /* === RAW NES NOISE PERIODS === */
+  // These do NOT hit the synthesized kick/snare voices - they clock the real
+  // 15-bit LFSR at one of the 2A03's 16 hardware noise periods, the authentic
+  // way NES percussion was made. A note's period index is midi - NZ_BASE.
+  // NZ0 is the brightest hiss (period 4), NZ15 the darkest rumble (period
+  // 4068). The 128..143 range sits above every real pitch and clear of the
+  // KICK/SNARE/HIHAT/CYMBAL selectors, so it can never collide.
+  public static final int NZ_BASE = 128;
+  public static final int NZ0 = 128, NZ1 = 129, NZ2 = 130, NZ3 = 131;
+  public static final int NZ4 = 132, NZ5 = 133, NZ6 = 134, NZ7 = 135;
+  public static final int NZ8 = 136, NZ9 = 137, NZ10 = 138, NZ11 = 139;
+  public static final int NZ12 = 140, NZ13 = 141, NZ14 = 142, NZ15 = 143;
+
+  /**
+   * True if a noise-channel midi value encodes a raw NES noise period
+   * (NZ0..NZ15) rather than a drum selector or pitched note. Keeps the
+   * synth's dispatch a one-liner and keeps the 128..143 encoding owned here,
+   * next to the constants that define it.
+   *
+   * @param midi a note's midi value
+   * @return whether it decodes to a raw noise period
+   */
+  public static boolean isRawNoise(int midi) {
+    return midi >= NZ_BASE && midi < NZ_BASE + 16;
+  }
+
   /* === SPECIAL: REST === */
   public static final int R = -1;
 
@@ -83,11 +109,15 @@ public interface ChiptuneSong {
   public static final double DRUM_DUTY = 0.50;    // ignored by noise
 
   /* === SUSTAIN RELATED CONSTANTS === */
+  public static final double SOSTENUTO = 0.0;   // hold at full volume
+  public static final double TENUTO = 0.205;   // pad-like, slow decline
   public static final double LEGATO = 0.535;   // current default
-  public static final double SUSTAINED = 0.0;   // hold at full volume
-  public static final double GENTLE_FADE = 0.205;   // pad-like, slow decline
   public static final double STACCATO = 1.565;   // sharp percussive cut
   public static final double PORTATO = LEGATO + STACCATO / 2;
+  public static final double STACCATISSIMO = 6.0;
+
+  // for NES-native sound channel without in-house drum kit
+  public static final double NOISE_DECAY = 18.0;
 
   /* === METHODS EACH SONG IMPLEMENTS === */
   Track getLead();

@@ -72,11 +72,6 @@ public class FlashmanSong implements ChiptuneSong {
   private static final double BRIDGE_DUTY = 0.75;    // V03
   private static final double THIN_DUTY   = 0.125;   // V00, pulse 2's home
 
-  private static final double HAT_V   = 0.50;    // vE tick
-  private static final double HAT_SOFT = 0.25;   // v6 tick after the kick
-  private static final double SNARE_V = 0.85;
-  private static final double ROLL_V  = 0.60;    // v9 fill hits
-
   /* === ARTICULATION (all measured) ===
    * The head stabs its eighths (5 tone + 7 silent); the verse sings them
    * (11 + 1). Sixteenths are 5 + 1 everywhere. Quarters ring 23 + 1. */
@@ -584,84 +579,187 @@ public class FlashmanSong implements ChiptuneSong {
     return t;
   }
 
-  /* ==================== DRUMS ==================== */
+  /* ==================== DRUMS (authentic 2A03 noise) ====================
+   *
+   * Extracted from flashman.txt's noise channel bar-for-bar, then factored:
+   * the ~4000-line raw capture is really five gestures under two periodic
+   * counters. Every hit is the real 15-bit LFSR clocked at one of the
+   * cartridge's 16 noise periods (NZ0 = brightest hiss ... NZ15 = darkest
+   * rumble). The track is SOSTENUTO, so the volume writes below ARE the
+   * envelope - the same "trust the capture's volume column" the tuned voices
+   * use. DRUM_VOL is the channel's mix level; the 0..1 factors are the
+   * capture's volume column.
+   *
+   * The gestures:
+   *   kick   - a full-volume 3-period sweep (NZ4/15/10, the broadband thump)
+   *            tailed by a bright NZ5/NZ0 tick
+   *   hhat   - the head's soft offbeat tick (one frame of NZ11)
+   *   vhat   - the loop's louder hat (NZ11, a two-step decay)
+   *   vsnare - the backbeat snare (NZ2, a three-step decay)
+   *   sweep5 - a descending 5-tone tom run; the roll and the climb are both
+   *            just sequences of these
+   *
+   * FORM (bar for bar from the capture): 15 bars of the kick groove - with an
+   * open-hat accent every 8th bar at offset 2 (bars 2, 10) - then a tom roll
+   * (bar 15). The loop is 8 verse bars, a 7-bar bridge whose snare lands on 4
+   * every 4th bar (24, 28) and on 2+4 otherwise, then the descending climb.
+   */
 
-  private static void hit(Track t, int voice, double vol, int slot) {
-    t.withVolume(vol).addNotes(voice, T, R, slot - T);
-  }
-
-  // head kit: kick-sweep on every beat, soft tick on the "e"
-  private static void headKitBar(Track t) {
-    for (int beat = 0; beat < 4; ++beat) {
-      hit(t, KICK, 1.0, S);
-      hit(t, HIHAT, HAT_SOFT, E + S);
+  // one raw hit: `period` sounding `on` frames at `vol`, then `rest` of air
+  private static void hit(Track t, int period, double vol, int on, int rest) {
+    t.withVolume(DRUM_VOL * vol).addNotes(period, on);
+    if (rest > 0) {
+      t.addNotes(R, rest);
     }
   }
 
-  // head bar 16: the 13-hit roll under the rung-out B
+  /* ---- head kit ---- */
+
+  // the beat thump: a full-volume sweep across three periods (the broadband
+  // transient that IS the kick), tailed by a short bright tick
+  private static void kick(Track t) {
+    t.withVolume(DRUM_VOL).addNotes(NZ4, 1, NZ15, 1, NZ10, 1);
+    t.withVolume(DRUM_VOL * 0.33).addNotes(NZ5, 1, NZ0, 2);
+  }
+
+  // the head's soft offbeat tick: one frame of NZ11, five of air
+  private static void hhat(Track t) {
+    hit(t, NZ11, 0.40, 1, 5);
+  }
+
+  // one head beat (24f) = kick then three offbeat ticks; the accent swaps the
+  // last tick for the capture's louder open hat (bars 2, 10, on beat 3)
+  private static void headBeat(Track t, boolean accent) {
+    kick(t);
+    hhat(t);
+    hhat(t);
+    if (accent) {
+      t.withVolume(DRUM_VOL * 0.40).addNotes(NZ11, 3);
+      t.withVolume(DRUM_VOL).addNotes(NZ11, 3);
+    } else {
+      hhat(t);
+    }
+  }
+
+  private static void headKitBar(Track t, boolean accent) {
+    headBeat(t, false);
+    headBeat(t, false);
+    headBeat(t, accent);
+    headBeat(t, false);
+  }
+
+  // a descending 5-tone tom sweep from `start`: start, start-2, ... start-8
+  // (mod 16), each softer than the last; the final tone holds `tail` frames
+  private static void sweep5(Track t, int start, int tail) {
+    double[] v = {0.60, 0.53, 0.47, 0.40, 0.33};
+    for (int i = 0; i < 5; ++i) {
+      int p = ((start - 2 * i) % 16 + 16) % 16;
+      t.withVolume(DRUM_VOL * v[i]).addNotes(NZ0 + p, i < 4 ? 1 : tail);
+    }
+  }
+
+  // bar 15: the tom roll under the rung-out B - eight sweeps starting on 7
+  // through the first half, then cascading 10/9/8/7 through the second
   private static void rollBar(Track t) {
-    int[] slots = {S, E, E, E, S, S, S, S, S, S, S, S, S};
-    for (int len : slots) {
-      hit(t, SNARE, ROLL_V, len);
+    sweep5(t, 7, 2);
+    sweep5(t, 7, 1);
+    t.addNotes(R, 7);
+    sweep5(t, 7, 1);
+    t.addNotes(R, 7);
+    sweep5(t, 7, 1);
+    t.addNotes(R, 7);
+    sweep5(t, 7, 2);
+    sweep5(t, 10, 2);
+    sweep5(t, 10, 2);
+    sweep5(t, 9, 2);
+    sweep5(t, 9, 2);
+    sweep5(t, 8, 2);
+    sweep5(t, 8, 2);
+    sweep5(t, 7, 2);
+    sweep5(t, 7, 2);
+  }
+
+  /* ---- loop kit ---- */
+
+  // the loop's hat: NZ11 struck loud, dropping in two steps, then `rest` air
+  private static void vhat(Track t, int rest) {
+    t.withVolume(DRUM_VOL * 0.93).addNotes(NZ11, 1);
+    t.withVolume(DRUM_VOL * 0.27).addNotes(NZ11, 2);
+    if (rest > 0) {
+      t.addNotes(R, rest);
     }
   }
 
-  // verse groove: tick 1, snare 2, ride run-up, snare 4
-  private static void verseKitBar(Track t) {
-    hit(t, HIHAT, HAT_V, Q);
-    hit(t, SNARE, SNARE_V, E + S);
-    hit(t, HIHAT, HAT_V, S);
-    hit(t, HIHAT, HAT_V, S);
-    hit(t, HIHAT, HAT_V, S);
-    hit(t, HIHAT, HAT_V, E);
-    hit(t, SNARE, SNARE_V, Q);
+  // the backbeat snare: bright NZ2 falling in three steps, then `rest` air
+  private static void vsnare(Track t, int rest) {
+    t.withVolume(DRUM_VOL * 0.93).addNotes(NZ2, 3);
+    t.withVolume(DRUM_VOL * 0.53).addNotes(NZ2, 4);
+    t.withVolume(DRUM_VOL * 0.13).addNotes(NZ2, 4);
+    if (rest > 0) {
+      t.addNotes(R, rest);
+    }
   }
 
-  // bridge groove: hats in eighths, snare on 4 (first bar) or 2 and 4
+  // verse groove: lone hat 1, snare 2, four-16th ride run-up, snare 4
+  private static void verseKitBar(Track t) {
+    vhat(t, 21);
+    vsnare(t, 7);
+    vhat(t, 3);
+    vhat(t, 3);
+    vhat(t, 3);
+    vhat(t, 9);
+    vsnare(t, 13);
+  }
+
+  // bridge, snare on 2 and 4 (the common bar)
+  private static void bridgeKitBarB(Track t) {
+    vhat(t, 9);
+    vhat(t, 9);
+    vsnare(t, 13);
+    vhat(t, 9);
+    vhat(t, 9);
+    vsnare(t, 13);
+  }
+
+  // bridge, snare on 4 only - hats run straight eighths through beats 1-3
   private static void bridgeKitBarA(Track t) {
     for (int i = 0; i < 6; ++i) {
-      hit(t, HIHAT, HAT_V, E);
+      vhat(t, 9);
     }
-    hit(t, SNARE, SNARE_V, Q);
+    vsnare(t, 13);
   }
 
-  private static void bridgeKitBarB(Track t) {
-    hit(t, HIHAT, HAT_V, E);
-    hit(t, HIHAT, HAT_V, E);
-    hit(t, SNARE, SNARE_V, Q);
-    hit(t, HIHAT, HAT_V, E);
-    hit(t, HIHAT, HAT_V, E);
-    hit(t, SNARE, SNARE_V, Q);
-  }
-
-  // the climb bar winds down on fading quarter ticks
+  // bar 31: the wrap winds down on descending quarter ticks (12/11/10/9)
   private static void climbKitBar(Track t) {
-    hit(t, HIHAT, 0.50, Q);
-    hit(t, HIHAT, 0.42, Q);
-    hit(t, HIHAT, 0.34, Q);
-    hit(t, HIHAT, 0.26, Q);
+    hit(t, NZ12, 0.53, 3, 9);
+    hit(t, NZ12, 0.53, 3, 9);
+    hit(t, NZ11, 0.53, 3, 9);
+    hit(t, NZ11, 0.53, 3, 9);
+    hit(t, NZ10, 0.53, 3, 3);
+    hit(t, NZ10, 0.53, 3, 3);
+    hit(t, NZ10, 0.53, 3, 9);
+    hit(t, NZ9, 0.53, 3, 9);
+    hit(t, NZ9, 0.53, 3, 9);
   }
 
   @Override
   public Track getDrums() {
-    Track t = new Track().withDefaults(DRUM_VOL, DRUM_DUTY);
-    for (int bar = 0; bar < 15; ++bar) {         // head
-      headKitBar(t);
+    Track t = new Track().withDefaults(DRUM_VOL, DRUM_DUTY).withDecay(SOSTENUTO);
+    for (int bar = 0; bar < 15; ++bar) {         // head: kick groove
+      headKitBar(t, bar % 8 == 2);               // open-hat accent on 2, 10
     }
-    rollBar(t);
+    rollBar(t);                                  // bar 15: the roll
     for (int bar = 0; bar < 8; ++bar) {          // verse
       verseKitBar(t);
     }
-    for (int half = 0; half < 2; ++half) {       // bridge + walks
-      bridgeKitBarA(t);
-      bridgeKitBarB(t);
-      bridgeKitBarB(t);
-      if (half == 0) {
-        bridgeKitBarB(t);
+    for (int bar = 24; bar < 31; ++bar) {        // bridge
+      if ((bar - 24) % 4 == 0) {
+        bridgeKitBarA(t);                        // snare on 4 (bars 24, 28)
       } else {
-        climbKitBar(t);
+        bridgeKitBarB(t);                        // snare on 2 and 4
       }
     }
+    climbKitBar(t);                              // bar 31: the descending wrap
     return t;
   }
 }

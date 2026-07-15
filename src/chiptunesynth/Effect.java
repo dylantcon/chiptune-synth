@@ -15,6 +15,14 @@ package chiptunesynth;
  *  - vibrato   : a pitch LFO; the late-onset wobble on held notes.
  *  - slide     : portamento; glide from the previous pitch into this one.
  *  - pitchEnv  : a one-shot pitch ramp toward 0 (scoops, zaps, drum sweeps).
+ *  - detune    : a CONSTANT sub-semitone pitch offset held for the whole note.
+ *                This is the FamiTracker fine-pitch (Pxx) register: NSF
+ *                captures write it per note to place the pitch exactly on the
+ *                recorded period, which the equal-tempered note name only
+ *                approximates. Unlike vibrato it does not move; unlike slide it
+ *                needs no previous pitch. One 2A03 period step is a
+ *                pitch-dependent fraction of a semitone, so the converter bakes
+ *                the already-resolved semitone value in here.
  *  - swell     : a parabolic AMPLITUDE contour  soft fade in to a peak and
  *                back down. This is the one non-pitch tool here; it's what a
  *                "pad" needs. A flat-topped square that just switches on at
@@ -37,7 +45,7 @@ public final class Effect {
 
   /** The do-nothing effect. Every existing note defaults to this. */
   public static final Effect NONE =
-          new Effect(null, 1, 0, 0, 0, 0, 0, 0, false);
+          new Effect(null, 1, 0, 0, 0, 0, 0, 0, false, 0);
 
   final int[]  arpSemis;    // semitone offsets cycled for a fake chord; null=off
   final int    arpSpeed;    // frames per arp step (1 = swap every frame)
@@ -48,10 +56,11 @@ public final class Effect {
   final double penvStart;   // pitch-env: starting offset in semitones...
   final int    penvFrames;  // ...ramping linearly to 0 across this many frames
   final boolean swell;      // parabolic amplitude envelope across the note
+  final double detuneSemis; // constant pitch offset, semitones (fine pitch/Pxx)
 
   private Effect(int[] arp, int arpSpeed, double vibSemis, double vibHz,
                  int vibDelay, int slideFrames, double penvStart, int penvFrames,
-                 boolean swell) {
+                 boolean swell, double detuneSemis) {
     this.arpSemis = arp;
     this.arpSpeed = arpSpeed;
     this.vibSemis = vibSemis;
@@ -61,30 +70,31 @@ public final class Effect {
     this.penvStart = penvStart;
     this.penvFrames = penvFrames;
     this.swell = swell;
+    this.detuneSemis = detuneSemis;
   }
 
   /** Fake-chord arpeggio: e.g. withArp(0,4,7) = a major triad on one channel. */
   public Effect withArp(int... semis) {
     return new Effect(semis, arpSpeed, vibSemis, vibHz, vibDelay,
-            slideFrames, penvStart, penvFrames, swell);
+            slideFrames, penvStart, penvFrames, swell, detuneSemis);
   }
 
   /** Frames per arp step. 1 (default) = the classic shimmer; 2-3 = chunkier. */
   public Effect withArpSpeed(int framesPerStep) {
     return new Effect(arpSemis, Math.max(1, framesPerStep), vibSemis, vibHz,
-            vibDelay, slideFrames, penvStart, penvFrames, swell);
+            vibDelay, slideFrames, penvStart, penvFrames, swell, detuneSemis);
   }
 
   /** Vibrato: depth in semitones, rate in Hz, delay in frames before onset. */
   public Effect withVibrato(double semis, double hz, int delayFrames) {
     return new Effect(arpSemis, arpSpeed, semis, hz, delayFrames,
-            slideFrames, penvStart, penvFrames, swell);
+            slideFrames, penvStart, penvFrames, swell, detuneSemis);
   }
 
   /** Portamento: glide from the previous note's pitch over this many frames. */
   public Effect withSlide(int frames) {
     return new Effect(arpSemis, arpSpeed, vibSemis, vibHz, vibDelay,
-            Math.max(0, frames), penvStart, penvFrames, swell);
+            Math.max(0, frames), penvStart, penvFrames, swell, detuneSemis);
   }
 
   /**
@@ -94,7 +104,18 @@ public final class Effect {
    */
   public Effect withPitchEnv(double startSemis, int frames) {
     return new Effect(arpSemis, arpSpeed, vibSemis, vibHz, vibDelay,
-            slideFrames, startSemis, Math.max(0, frames), swell);
+            slideFrames, startSemis, Math.max(0, frames), swell, detuneSemis);
+  }
+
+  /**
+   * Constant fine-pitch detune: shift the whole note by {@code semis}
+   * semitones (fractional). This is the FamiTracker Pxx register resolved to
+   * a pitch offset  positive is sharp, negative is flat. It sums with the
+   * other pitch effects, so a detuned note can still arpeggiate or vibrato.
+   */
+  public Effect withDetune(double semis) {
+    return new Effect(arpSemis, arpSpeed, vibSemis, vibHz, vibDelay,
+            slideFrames, penvStart, penvFrames, swell, semis);
   }
 
   /**
@@ -106,7 +127,7 @@ public final class Effect {
    */
   public Effect withSwell() {
     return new Effect(arpSemis, arpSpeed, vibSemis, vibHz, vibDelay,
-            slideFrames, penvStart, penvFrames, true);
+            slideFrames, penvStart, penvFrames, true, detuneSemis);
   }
 
   /**
@@ -117,7 +138,7 @@ public final class Effect {
    * @return additive pitch offset in semitones
    */
   double pitchOffset(int f) {
-    double off = 0;
+    double off = detuneSemis;                 // constant, present for every frame
     if (arpSemis != null && arpSemis.length > 0) {
       off += arpSemis[(f / arpSpeed) % arpSemis.length];
     }

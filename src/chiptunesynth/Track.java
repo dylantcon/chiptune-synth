@@ -25,6 +25,10 @@ public class Track {
   private double defaultVolume = 0.7;
   private double defaultDuty = 0.25;
   private double currentDecay = 0.6;        // state for subsequent addNotes
+  // Hard cut by default: the existing songs are composed against a note-off
+  // that stops dead, so a release stays OPT-IN via withRelease(...). Only the
+  // pulse voices honor it (the triangle/noise ignore the field).
+  private double currentRelease = 0;        // ring-out rate after note-off
   private Effect currentEffect = Effect.NONE;  // ditto, for pitch modulation
   private int transpose = 0;                // semitones added to every pitch
 
@@ -52,6 +56,17 @@ public class Track {
 
   public Track withDecay(double decay) {
     this.currentDecay = decay;
+    return this;
+  }
+
+  // ring-out rate (decay-per-sec) applied to every subsequent note AFTER it is
+  // released into a rest, so a sustained note fades out instead of being cut
+  // dead. Default 0 is a hard cut (stops dead). A note fades over about
+  // 60/release frames  e.g. withRelease(6) is a ~10-frame (0.17s) tail,
+  // withRelease(12) is snappier. Reach for it on sustained melodic voices whose
+  // note-offs sound chopped; leave it off for stabs and gated parts.
+  public Track withRelease(double release) {
+    this.currentRelease = Math.max(0, release);
     return this;
   }
 
@@ -99,6 +114,14 @@ public class Track {
     return this;
   }
 
+  // constant fine-pitch detune (semitones) for every subsequent addNotes
+  // the FamiTracker Pxx register resolved to a pitch offset. Persists like
+  // withDuty/withVolume; pass 0 to re-center.
+  public Track withDetune(double semis) {
+    this.currentEffect = currentEffect.withDetune(semis);
+    return this;
+  }
+
   public Track withSwell() {
     this.currentEffect = currentEffect.withSwell();
     return this;
@@ -112,6 +135,60 @@ public class Track {
 
   public Track add(Note n) {
     notes.add(n);
+    return this;
+  }
+
+  /**
+   * Shift every note ALREADY in this track by {@code semitones} (rests
+   * untouched). Unlike {@link #withTranspose} (which only affects subsequent
+   * addNotes), this rewrites what is already here  the natural knob in a
+   * getter for dropping a whole voice an octave, e.g. a converter-generated
+   * triangle that came out an octave high. Mutates in place.
+   */
+  public Track transposePitches(int semitones) {
+    for (int i = 0; i < notes.size(); i++) {
+      Note n = notes.get(i);
+      if (n.midi >= 0) {
+        notes.set(i, new Note(n.midi + semitones, n.durationFrames, n.volume,
+                n.duty, n.decay, n.fx, n.release));
+      }
+    }
+    return this;
+  }
+
+  /**
+   * Shift only the notes that START within [{@code fromFrame}, {@code toFrame})
+   * by {@code semitones}  a localized {@link #transposePitches(int)} for
+   * fixing one passage (e.g. undoing an octave drop over a stretch where the
+   * melody itself dips low and the dropped bass would collide with it). Frame
+   * positions are measured from the top of this track. Mutates in place.
+   */
+  public Track transposePitches(int semitones, int fromFrame, int toFrame) {
+    int at = 0;
+    for (int i = 0; i < notes.size(); i++) {
+      Note n = notes.get(i);
+      if (n.midi >= 0 && at >= fromFrame && at < toFrame) {
+        notes.set(i, new Note(n.midi + semitones, n.durationFrames, n.volume,
+                n.duty, n.decay, n.fx, n.release));
+      }
+      at += n.durationFrames;
+    }
+    return this;
+  }
+
+  /**
+   * Scale every note's volume by {@code factor} (rests untouched)  balance a
+   * whole voice in the mix from a getter without touching each withVolume.
+   * Mutates in place.
+   */
+  public Track scaleVolume(double factor) {
+    for (int i = 0; i < notes.size(); i++) {
+      Note n = notes.get(i);
+      if (n.midi >= 0) {
+        notes.set(i, new Note(n.midi, n.durationFrames, n.volume * factor,
+                n.duty, n.decay, n.fx, n.release));
+      }
+    }
     return this;
   }
 
@@ -135,7 +212,7 @@ public class Track {
         midi += transpose;   // rests (-1) stay rests
       }
       notes.add(new Note(midi, dur, defaultVolume, defaultDuty,
-              currentDecay, currentEffect));
+              currentDecay, currentEffect, currentRelease));
     }
     return this;
   }
@@ -250,7 +327,8 @@ public class Track {
         break;
       }
       int d = Math.min(n.durationFrames, budget);
-      t.add(new Note(n.midi, d, n.volume * volScale, duty, n.decay, n.fx));
+      t.add(new Note(n.midi, d, n.volume * volScale, duty, n.decay, n.fx,
+              n.release));
       budget -= d;
     }
     return t;

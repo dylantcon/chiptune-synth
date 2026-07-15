@@ -18,6 +18,7 @@ public class Note {
     public final double duty;
     public final double decay;          // per-note envelope decay rate
     public final Effect fx;             // per-note pitch modulation (never null)
+    public final double release;        // decay-per-sec AFTER note-off (0 = hard cut)
 
     public Note(int midi, int duration, double volume, double duty) {
         this(midi, duration, volume, duty, DEFAULT_DECAY, Effect.NONE);
@@ -29,17 +30,23 @@ public class Note {
 
     public Note(int midi, int duration, double volume, double duty,
                 double decay, Effect fx) {
+        this(midi, duration, volume, duty, decay, fx, 0.0);
+    }
+
+    public Note(int midi, int duration, double volume, double duty,
+                double decay, Effect fx, double release) {
         this.midi = midi;
         this.durationFrames = duration;
         this.volume = volume;
         this.duty = duty;
         this.decay = decay;
         this.fx = (fx == null) ? Effect.NONE : fx;
+        this.release = release;
     }
 
     public static Note rest(int frames) {
         return new Note(-1, frames, 0, 0.5, 0, Effect.NONE);
     }
-    
+
     private static final double DEFAULT_DECAY = 0.6;
 }

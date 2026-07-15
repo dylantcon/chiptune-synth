@@ -50,7 +50,7 @@ public class ZeldaDungeonSong implements ChiptuneSong {
 
   /* === GRID === */
   private static final int P = 20;       // the pulse: everything rides it
-  private static final int H = P / 2;    // half pulse (triangle run, offsets)
+  private static final int H_1 = P / 2;    // half pulse (triangle run, offsets)
   private static final int LOOP = 58 * P;
 
   /* === VOICES / MIX === */
@@ -82,14 +82,14 @@ public class ZeldaDungeonSong implements ChiptuneSong {
   @Override
   public Track getLead() {
     Track t = square();
-    t.addNotes(R, H);                    // enters half a pulse behind pulse 2
+    t.addNotes(R, H_1);                    // enters half a pulse behind pulse 2
     rock(t, AS4, DS5, 4);                // Bb   } sinking chromatically
     rock(t, A4,  DS5, 4);                // A    } under the Eb5 pedal
     rock(t, GS4, DS5, 4);                // Ab   }
     rock(t, G4,  DS5, 4);                // G    }
     rock(t, G4,  D5,  8);                // G doubled, pedal drops to D5
     climb(t, FS4, C5, A4, DS5, C5, C5, FS5, FS5, FS5);
-    t.addNotes(C6, H);                   // rings across the seam; the head
+    t.addNotes(C6, H_1);                   // rings across the seam; the head
     return t;                            // rest is this note's other half
   }
 
@@ -124,7 +124,7 @@ public class ZeldaDungeonSong implements ChiptuneSong {
     int[] run = {D4, FS4, A4, FS4, A4, C5, A4, C5, DS5, C5,
                  DS5, FS5, A5, FS5, DS5, C5, DS5, C5, A4, FS4};
     for (int p : run) {
-      t.addNotes(p, H);
+      t.addNotes(p, H_1);
     }
     return t;
   }

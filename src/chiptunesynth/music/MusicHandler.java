@@ -17,12 +17,15 @@ public interface MusicHandler {
   public static final Class<?>[] concretized = {
     KorobeinikiMusicHandler.class,
     FlashmanMusicHandler.class,
-    WilyMusicHandler.class,
     BloodyTearsMusicHandler.class,
     ContraJungleMusicHandler.class,
+    AirmanMusicHandler.class,
     SurfCityMusicHandler.class,
+    MetalmanMusicHandler.class,
     HyruleTempleMusicHandler.class,
+    QuickmanMusicHandler.class,
     DuckTalesMoonMusicHandler.class,
+    WilyMusicHandler.class,
     ZeldaDungeonMusicHandler.class,
     SilverSurferMusicHandler.class
   };

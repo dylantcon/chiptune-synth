@@ -118,12 +118,12 @@ public class HyruleTempleSong implements ChiptuneSong {
     
     /* bar 7 */
     t.withDecay(STACCATO).addNotes(D4, E, D4, E, R, E);
-    t.withDecay(GENTLE_FADE).addNotes(DS4, 5*E);
+    t.withDecay(TENUTO).addNotes(DS4, 5*E);
     /* bar 8 */
     t.withDecay(STACCATO).addNotes(D4, E, D4, E, R, E);
-    t.withDecay(GENTLE_FADE).addNotes(FS4, Q, A4, Q, C5, E);
+    t.withDecay(TENUTO).addNotes(FS4, Q, A4, Q, C5, E);
     /* bar 9 */
-    t.withDecay(GENTLE_FADE).addNotes(D4, W);
+    t.withDecay(TENUTO).addNotes(D4, W);
     t.withDecay(LEGATO);
     
     /* END CHORUS */
@@ -230,7 +230,7 @@ public class HyruleTempleSong implements ChiptuneSong {
   // one sustained, swelling chord tone per bar (a pad-like inner voice)
   private static Track harmonyFrom(int[] tones) {
     Track t = new Track().withDefaults(HARMONY_VOL, HARMONY_DUTY)
-                         .withSwell().withDecay(SUSTAINED);
+                         .withSwell().withDecay(SOSTENUTO);
     for (int tone : tones) t.addNotes(tone, W);
     return t;
   }
@@ -257,7 +257,7 @@ public class HyruleTempleSong implements ChiptuneSong {
   // intro bass: held G pedal for bars 1-5 (gm / Eb/G / e/G all sit on G),
   // then the Bb-Am-Ab descent of bar 6, matching the lead.
   private static Track getBassIntro() {
-    Track t = new Track().withDefaults(BASS_VOL, BASS_DUTY).withDecay(SUSTAINED);
+    Track t = new Track().withDefaults(BASS_VOL, BASS_DUTY).withDecay(SOSTENUTO);
     for (int bar = 1; bar <= 5; ++bar) t.addNotes(G2, W);
     t.addNotes(AS2, DQ, A2, DQ, GS2, Q);   // Bb  Am  Ab
     return t;
@@ -267,7 +267,7 @@ public class HyruleTempleSong implements ChiptuneSong {
   // then chromatic parallel-4ths under the lead's Bb-A-Ab in bar 6.
   private static Track getHarmonyIntro() {
     Track t = new Track().withDefaults(HARMONY_VOL, HARMONY_DUTY)
-                         .withSwell().withDecay(SUSTAINED);
+                         .withSwell().withDecay(SOSTENUTO);
     for (int bar = 1; bar <= 5; ++bar) t.addNotes(AS3, W);
     t.addNotes(F4, DQ, E4, DQ, DS4, Q);    // 4ths below Bb  A  Ab
     return t;

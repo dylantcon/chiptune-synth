@@ -156,7 +156,7 @@ public class SurfCitySong implements ChiptuneSong {
     s16(t, root);
     t.addNotes(R, E);
     t.withVolume(CHIME_VOL).withDuty(HARMONY_DUTY)
-     .withNoFx().withSwell().withDecay(SUSTAINED)
+     .withNoFx().withSwell().withDecay(SOSTENUTO)
      .addNotes(DS4, 40);                 // Eb chime, all statements (per rip)
     t.withVolume(leadVol).withDuty(leadDuty)
      .withNoFx().withVibrato(0.4, 5.5, 8).withDecay(LEGATO)
@@ -343,7 +343,7 @@ public class SurfCitySong implements ChiptuneSong {
     for (int root : sparkleRoots) {
       t.addNotes(R, W)                   // silent under the hook bar
        .addNotes(R, Q)
-       .withSwell().withDecay(SUSTAINED).addNotes(GS3, 40)
+       .withSwell().withDecay(SOSTENUTO).addNotes(GS3, 40)
        .withNoFx().withDecay(LEGATO);
       s16(t, root);
       s16(t, root + 3);

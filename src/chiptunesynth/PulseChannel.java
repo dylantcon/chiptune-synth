@@ -22,13 +22,32 @@ class PulseChannel {
   double duty = 0.5;
   double envelope = 0;
   double envelopeDecay = 0;
+  double release = 0;          // decay-per-sec applied after note-off
+  boolean releasing = false;   // true once a release fade has begun
+  double lastAmp = 0;          // envelope used for the most recent sample()
+
+  // current amplitude (0..1) driving the waveform  the APU mixer needs it,
+  // together with sample(), to recover the channel's unipolar 0..15 DAC level.
+  double amplitude() {
+    return lastAmp;
+  }
 
   // decayPerSec=0 holds the note flat; larger = faster fade
   void noteOn(double frequency, double volume, double dutyCycle, double decayPerSec) {
+    noteOn(frequency, volume, dutyCycle, decayPerSec, 0.0);
+  }
+
+  // releasePerSec>0 lets the note ring out over ~60/releasePerSec frames when
+  // it is released, instead of snapping to silence  the missing release phase
+  // that made every note-into-rest sound chopped.
+  void noteOn(double frequency, double volume, double dutyCycle,
+              double decayPerSec, double releasePerSec) {
     this.freq = frequency;
     this.duty = dutyCycle;
     this.envelope = volume;
     this.envelopeDecay = decayPerSec * volume / ChiptuneSynth.SAMPLE_RATE;
+    this.release = releasePerSec;
+    this.releasing = false;
   }
 
   // update pitch mid-note WITHOUT touching phase or envelope. this is what
@@ -45,12 +64,24 @@ class PulseChannel {
     this.envelope = level;
   }
 
+  // With no release set this is the old hard cut. With a release, the first
+  // note-off frame arms a linear fade from the current level (so the note rings
+  // out through the rest); later note-off frames leave it fading rather than
+  // re-arming, giving one smooth ~60/release-frame tail.
   void noteOff() {
-    this.envelope = 0;
+    if (release > 0) {
+      if (!releasing && envelope > 0) {
+        this.envelopeDecay = release * envelope / ChiptuneSynth.SAMPLE_RATE;
+        this.releasing = true;
+      }
+    } else {
+      this.envelope = 0;
+    }
   }
 
   double sample() {
     if (envelope <= 0 || freq <= 0) {
+      lastAmp = 0;
       return 0;
     }
     double dt = freq / ChiptuneSynth.SAMPLE_RATE;
@@ -70,6 +101,7 @@ class PulseChannel {
       tf += 1.0;
     }
     s -= polyBlep(tf, dt);                                 // falling @ duty
+    lastAmp = envelope;                                    // amp for this sample
     s *= envelope;
     envelope = Math.max(0, envelope - envelopeDecay);
     return s;

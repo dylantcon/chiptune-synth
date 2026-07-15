@@ -34,6 +34,12 @@ class TriangleChannel {
     this.active = false;
   }
 
+  // the triangle has no volume envelope  it is either running at full scale or
+  // off  so its amplitude is 1 while active, matching sample()'s [-1, 1] swing.
+  double amplitude() {
+    return active ? 1.0 : 0.0;
+  }
+
   double sample() {
     if (!active || freq <= 0) {
       return 0;

@@ -81,9 +81,9 @@ public class ChiptuneSynth implements Runnable {
   private volatile long musicalFrame = 0;
 
   private final java.util.List<ChiptuneSynthListener> listeners =
-      new java.util.concurrent.CopyOnWriteArrayList<ChiptuneSynthListener>();
+      new java.util.concurrent.CopyOnWriteArrayList<>();
 
-  // per channel mixing weights
+  // per channel mixing weights (LINEAR fallback path only  see useApuMixer)
   private final double p1Mix = 0.25;
   private final double p2Mix = 0.25;
   private final double triMix = 0.30;
@@ -95,6 +95,52 @@ public class ChiptuneSynth implements Runnable {
   // punch through dense arrangements instead of drowning on the 0.18 noise bus.
   private final double snareMix = 0.40;
   private final double tomMix = 0.38;
+
+  // The four 2A03 tone channels (p1, p2, triangle, noise) go through the NES
+  // non-linear mixer; the synth's own kick/snare/tom voices are not real APU
+  // channels, so they are summed linearly and added on top. apuGain scales the
+  // DC-blocked APU output up to playback level  the main balance knob between
+  // the tone channels (as a group) and the drums. All tunable.
+  private final APUMixer apuMixer = new APUMixer();
+  private volatile boolean useApuMixer = true;
+  // 2.3 lands the APU-mixed peak on the old linear mix's level (measured on
+  // Quick Man)  a like-for-like loudness starting point to tune from.
+  private volatile double apuGain = 2.3;
+  // DC-blocker (1-pole high-pass, ~7 Hz) removes the unipolar offset the APU
+  // levels carry, without thinning the bass.
+  private static final double DC_R = 0.999;
+  private double dcX1 = 0, dcY1 = 0;
+
+  // rolling peak of the pre-clamp mix, for level metering / gain calibration
+  private volatile double peakOut = 0;
+
+  /** Largest |output| seen since the last {@link #resetPeak()} (pre-clamp).
+   * @return  */
+  public double getPeakOut() {
+    return peakOut;
+  }
+
+  public void resetPeak() {
+    this.peakOut = 0;
+  }
+
+  /** The NES mixer, exposed so its per-channel gains can be tuned live.
+   * @return  */
+  public APUMixer getApuMixer() {
+    return apuMixer;
+  }
+
+  /** Switch between the NES non-linear mixer (true) and the old linear sum.
+   * @param on */
+  public void setUseApuMixer(boolean on) {
+    this.useApuMixer = on;
+  }
+
+  /** Overall level of the APU tone-channel group against the drums.
+   * @param gain */
+  public void setApuGain(double gain) {
+    this.apuGain = Math.max(0, gain);
+  }
 
   public ChiptuneSynth setSong(Track p1, Track p2, Track triangle, Track noise) {
     this.p1Track = p1;
@@ -233,7 +279,8 @@ public class ChiptuneSynth implements Runnable {
               p1.noteOff();
             } else {
               if (p1Track.started) {
-                p1.noteOn(freqOf(effMidi(p1Track, n1)), n1.volume, n1.duty, n1.decay);
+                p1.noteOn(freqOf(effMidi(p1Track, n1)), n1.volume, n1.duty,
+                        n1.decay, n1.release);
               } else {
                 p1.setFrequency(freqOf(effMidi(p1Track, n1)));
               }
@@ -249,7 +296,8 @@ public class ChiptuneSynth implements Runnable {
               p2.noteOff();
             } else {
               if (p2Track.started) {
-                p2.noteOn(freqOf(effMidi(p2Track, n2)), n2.volume, n2.duty, n2.decay);
+                p2.noteOn(freqOf(effMidi(p2Track, n2)), n2.volume, n2.duty,
+                        n2.decay, n2.release);
               } else {
                 p2.setFrequency(freqOf(effMidi(p2Track, n2)));
               }
@@ -283,7 +331,17 @@ public class ChiptuneSynth implements Runnable {
             } else if (nd.midi == ChiptuneSong.CYMBAL) {
               // open hi-hat / crash: long broadband wash
               noi.noteOn(midiToFreq(nd.midi) * 8, nd.volume, 7.0, false);
-            } else if (nd.decay == ChiptuneSong.SUSTAINED) {
+            } else if (ChiptuneSong.isRawNoise(nd.midi)) {
+              // AUTHENTIC 2A03 drum: the real 15-bit LFSR clocked at the note's
+              // NES noise period. A rapid sweep across periods is the "clap",
+              // single periods are the ticks/snares  no synthesized kick/snare
+              // voice (the 2A03 has neither). Decay rides straight from the
+              // note: SOSTENUTO lets the volume column BE the envelope (as every
+              // voice does), while a positive decay (NOISE_DECAY) makes a
+              // self-shaping percussive one-shot for a hand-placed hit.
+              noi.noteOnPeriod(nd.midi - ChiptuneSong.NZ_BASE, nd.volume,
+                      nd.decay, false);
+            } else if (nd.decay == ChiptuneSong.SOSTENUTO) {
               // pitched noise, held: raw LFSR at the note's pitch with no
               // decay. Back-to-back notes re-attack seamlessly (the LFSR and
               // envelope never dip), so a run of these is one continuous
@@ -308,10 +366,34 @@ public class ChiptuneSynth implements Runnable {
           } else if (volume > targetVolume) {
             volume = Math.max(targetVolume, volume - VOLUME_SLEW);
           }
-          double mix = (p1.sample() * p1Mix + p2.sample() * p2Mix
-                  + tri.sample() * triMix + noi.sample() * noiMix
-                  + kick.sample() * kickMix + snare.sample() * snareMix
-                  + tom.sample() * tomMix) * volume;
+          double mix;
+          if (useApuMixer) {
+            // NES non-linear mix of the four tone channels. sample() must be
+            // called once each (it advances the envelope); amplitude() then
+            // reports the level that sample used, so levelOf can recover the
+            // 0..15 DAC value the hardware mixer would see.
+            double apu = apuMixer.mix(
+                APUMixer.levelOf(p1.sample(), p1.amplitude()),
+                APUMixer.levelOf(p2.sample(), p2.amplitude()),
+                APUMixer.levelOf(tri.sample(), tri.amplitude()),
+                APUMixer.levelOf(noi.sample(), noi.amplitude()));
+            // DC-block the unipolar APU output into a bipolar AC signal
+            double ac = apu - dcX1 + DC_R * dcY1;
+            dcX1 = apu;
+            dcY1 = ac;
+            double drums = kick.sample() * kickMix + snare.sample() * snareMix
+                    + tom.sample() * tomMix;
+            mix = (ac * apuGain + drums) * volume;
+          } else {
+            mix = (p1.sample() * p1Mix + p2.sample() * p2Mix
+                    + tri.sample() * triMix + noi.sample() * noiMix
+                    + kick.sample() * kickMix + snare.sample() * snareMix
+                    + tom.sample() * tomMix) * volume;
+          }
+          double amag = Math.abs(mix);
+          if (amag > peakOut) {
+            peakOut = amag;
+          }
           if (mix > 1) {
             mix = 1;
           }

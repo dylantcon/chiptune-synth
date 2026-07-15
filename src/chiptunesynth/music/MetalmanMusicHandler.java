@@ -4,35 +4,30 @@
  */
 package chiptunesynth.music;
 
-import chiptunesynth.songs.WilySong;
+import chiptunesynth.songs.MetalmanSong;
 
 /**
  *
  * @author dylan
  */
-public class WilyMusicHandler extends ChiptuneMusicHandler{
+public class MetalmanMusicHandler extends ChiptuneMusicHandler {
 
-  public WilyMusicHandler() {
-    super(new WilySong());
+  public MetalmanMusicHandler() {
+    super(new MetalmanSong());
   }
 
-  public WilyMusicHandler(boolean pb, double vol, double speed) {
+  public MetalmanMusicHandler(boolean pb, double vol, double speed) {
     this();
-    
+
     setVolume(vol);
     setSpeed(speed);
-    if (pb)
+    if (pb) {
       startMusic();
+    }
   }
-  
-  public WilyMusicHandler(double vol) {
-    this();
-    setVolume(vol);
-  }
-  
+
   @Override
   public String getMusicType() {
-    return "Dr. Wily's Castle - MM2";
+    return "Metal Man - MM2";
   }
-  
 }
