@@ -66,6 +66,11 @@ public final class APUMixer {
   /**
    * Mix one sample from the four channel DAC levels (0..15 each). Returns the
    * raw APU output, ~0..1 with a DC offset  DC-block before playback.
+   * @param p1
+   * @param p2
+   * @param triangle
+   * @param noise
+   * @return 
    */
   public double mix(double p1, double p2, double triangle, double noise) {
     double pulseSum = clamp(p1 * gainP1 + p2 * gainP2, 0, 30);
@@ -80,6 +85,9 @@ public final class APUMixer {
    * {@code amp * wave} with wave in [-1, 1], so the unipolar level is
    * {@code 15 * amp * (wave + 1) / 2 = 7.5 * (sample + amp)}. Band-limiting can
    * overshoot the edges slightly, so the result is clamped.
+   * @param sample
+   * @param amplitude
+   * @return 
    */
   public static double levelOf(double sample, double amplitude) {
     double level = 7.5 * (sample + amplitude);

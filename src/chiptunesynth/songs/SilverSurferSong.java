@@ -1295,85 +1295,9137 @@ public class SilverSurferSong implements ChiptuneSong {
   }
 
   /* ==================== DRUMS (noise) ==================== */
-  // Kit from the capture's noise periods and velocity layers: a 1-frame
-  // period-9 tick on each beat (it lands ON the triangle dive  together
-  // they are the kick), C/D-period "chik" pairs on the off-16ths, and an
-  // A/9 flam snare on beats 2 and 4. Painted decay tails ride our voices'
-  // own envelopes. {slot, voice, volumeStep, frames} on the 112 grid.
-
-  private static final int[][] KIT_A = {
-    {0, HIHAT, 5, 1}, {7, HIHAT, 4, 5}, {14, HIHAT, 4, 12},
-    {28, SNARE, 5, 11}, {42, HIHAT, 4, 12}, {56, HIHAT, 5, 1},
-    {63, HIHAT, 4, 5}, {70, HIHAT, 4, 12}, {84, SNARE, 5, 11},
-    {98, HIHAT, 4, 7}, {105, SNARE, 3, 7}
-  };
-
-  private static final int[][] KIT_B = {
-    {0, HIHAT, 5, 1}, {7, SNARE, 3, 7}, {14, HIHAT, 4, 12},
-    {28, SNARE, 5, 11}, {42, HIHAT, 4, 7}, {49, SNARE, 3, 7},
-    {56, HIHAT, 5, 1}, {63, HIHAT, 4, 5}, {70, SNARE, 3, 10},
-    {84, SNARE, 3, 10}, {98, SNARE, 3, 7}, {105, SNARE, 3, 7}
-  };
-
-  private static final int[][] KIT_D = {
-    {0, HIHAT, 5, 1}, {28, SNARE, 3, 10},
-    {56, HIHAT, 5, 1}, {84, SNARE, 3, 10}
-  };
-
-  private static final int[][] KIT_E = {
-    {0, HIHAT, 5, 3}, {14, HIHAT, 4, 12}, {28, SNARE, 3, 10},
-    {42, HIHAT, 4, 7}, {49, SNARE, 3, 7}, {56, HIHAT, 5, 3},
-    {70, HIHAT, 4, 12}, {84, SNARE, 3, 10}, {98, HIHAT, 4, 7},
-    {105, SNARE, 3, 7}
-  };
+  // Regenerated from title.txt by FamiTrackerTextConverter --noise-raw: the
+  // authentic 2A03 noise channel, clocked at the capture's real NES period
+  // indices (NZ0 = brightest hiss ... NZ15 = darkest rumble) instead of our
+  // synthesized KICK/SNARE/HIHAT kit. Follin paints the whole kit himself in
+  // the volume column -- the period-9 hat (NZ9) pumps a v5->v0 decay staircase
+  // every beat, the NZ12/NZ13 "chik" pairs are the snare, and bar 0 is the
+  // 15-step waterfall roar (NZ14->NZ0) that launches the song. Because the
+  // envelope IS the volume column, the track runs withDecay(SOSTENUTO) --
+  // layering NOISE_DECAY on top would double-fade every painted tail. Volumes
+  // stay on the song's own V() scale so the capture's pulse/noise balance
+  // survives. Twelve notes fall on 256-frame pattern seams where the converter
+  // reset volume to full (v15); on hardware the level persisted across the
+  // seam, so they read as V(5). getDrums + noiBar## are the converter's
+  // bar-sectioned output, retargeted onto V() -- hand-tune by ear from here.
+  // The noise channel is dense (constant period-9 ticks) and our APU mixer
+  // gives it more presence than the sparse pulse attacks, so at the capture's
+  // own levels it swamps the melody. This trims the whole channel's volume
+  // register against the pulses -- the one knob for noise-vs-melody balance
+  // (1.0 = the capture's raw levels; lower = quieter noise).
+  private static final double DRUM_SCALE = 0.7;
 
   @Override
   public Track getDrums() {
-    Track t = new Track().withDefaults(V(4), 0.5);
-    t.addNotes(kitHead());
-    t.addNotes(kitBar(KIT_A));                // bar 0
-    for (int b = 1; b <= 39; b++) {
-      t.addNotes(kitBar((b % 2 == 1) ? KIT_B : KIT_A));
-    }
-    for (int i = 0; i < 4; i++) {
-      t.addNotes(kitBar(KIT_D));              // bars 40-43, half-time
-    }
-    for (int i = 0; i < 4; i++) {
-      t.addNotes(kitBar(KIT_E));              // bars 44-47
-    }
+    Track t = new Track().withDefaults(V(4), 0.5).withDecay(SOSTENUTO);
+    noiBar00(t);
+    noiBar01(t);
+    noiBar02(t);
+    noiBar03(t);
+    noiBar04(t);
+    noiBar05(t);
+    noiBar06(t);
+    noiBar07(t);
+    noiBar08(t);
+    noiBar09(t);
+    noiBar10(t);
+    noiBar11(t);
+    noiBar12(t);
+    noiBar13(t);
+    noiBar14(t);
+    noiBar15(t);
+    noiBar16(t);
+    noiBar17(t);
+    noiBar18(t);
+    noiBar19(t);
+    noiBar20(t);
+    noiBar21(t);
+    noiBar22(t);
+    noiBar23(t);
+    noiBar24(t);
+    noiBar25(t);
+    noiBar26(t);
+    noiBar27(t);
+    noiBar28(t);
+    noiBar29(t);
+    noiBar30(t);
+    noiBar31(t);
+    noiBar32(t);
+    noiBar33(t);
+    noiBar34(t);
+    noiBar35(t);
+    noiBar36(t);
+    noiBar37(t);
+    noiBar38(t);
+    noiBar39(t);
+    noiBar40(t);
+    noiBar41(t);
+    noiBar42(t);
+    noiBar43(t);
+    noiBar44(t);
+    noiBar45(t);
+    noiBar46(t);
+    noiBar47(t);
+    noiBar48(t);
+    t.scaleVolume(DRUM_SCALE);   // trim the whole noise channel vs the pulses
     return t;
   }
 
-  // Head: a 15-step noise-period waterfall falling with the pulses. The
-  // capture holds v4 flat the whole way down  this is ONE continuous
-  // noise roar stepping in pitch, not fifteen drum hits, so it plays as
-  // sustained pitched noise (withDecay(SUSTAINED) routes off-selector
-  // pitches to the raw LFSR instead of the percussive tom voice).
-  private static Track kitHead() {
-    Track t = new Track().withDefaults(V(4), 0.5);
-    t.withDecay(SOSTENUTO);
-    for (int p = 14; p >= 0; p--) {
-      t.addNotes(37 + p * 4, 7);
-    }
-    t.withDecay(LEGATO);
-    t.addNotes(R, 7);
-    return t;
+  private static void noiBar00(Track t) {   // bar 0
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(   // reversed to fall high->low, like the original's head sweep
+        NZ0, 7 /* noise 0 */,
+        NZ1, 7 /* noise 1 */,
+        NZ2, 7 /* noise 2 */,
+        NZ3, 7 /* noise 3 */,
+        NZ4, 7 /* noise 4 */,
+        NZ5, 7 /* noise 5 */,
+        NZ6, 7 /* noise 6 */,
+        NZ7, 7 /* noise 7 */,
+        NZ8, 7 /* noise 8 */,
+        NZ9, 7 /* noise 9 */,
+        NZ10, 7 /* noise A */,
+        NZ11, 7 /* noise B */,
+        NZ12, 7 /* noise C */,
+        NZ13, 7 /* noise D */,
+        NZ14, 14 /* noise E */
+    );
   }
 
-  private static Track kitBar(int[][] hits) {
-    Track t = new Track().withDefaults(V(4), 0.5);
-    int at = 0;
-    for (int[] h : hits) {
-      if (h[0] > at) {
-        t.addNotes(R, h[0] - at);
-      }
-      t.withVolume(V(h[2]));
-      t.addNotes(h[1], h[3]);
-      at = h[0] + h[3];
-    }
-    if (at < W) {
-      t.addNotes(R, W - at);
-    }
-    return t;
+  private static void noiBar01(Track t) {   // bar 1
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar02(Track t) {   // bar 2
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 5 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 4 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar03(Track t) {   // bar 3
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar04(Track t) {   // bar 4
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 5 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 4 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar05(Track t) {   // bar 5
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar06(Track t) {   // bar 6
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 5 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 5 /* noise 9 */
+    );
+    t.withVolume(V(5));   // volume column F
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar07(Track t) {   // bar 7
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar08(Track t) {   // bar 8
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 5 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 4 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar09(Track t) {   // bar 9
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column F
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar10(Track t) {   // bar 10
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 5 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 4 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar11(Track t) {   // bar 11
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column F
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar12(Track t) {   // bar 12
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 5 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 4 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar13(Track t) {   // bar 13
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column F
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar14(Track t) {   // bar 14
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 5 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 4 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar15(Track t) {   // bar 15
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar16(Track t) {   // bar 16
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 5 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 4 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar17(Track t) {   // bar 17
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar18(Track t) {   // bar 18
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 5 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 4 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar19(Track t) {   // bar 19
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar20(Track t) {   // bar 20
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 5 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 4 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar21(Track t) {   // bar 21
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar22(Track t) {   // bar 22
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 5 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 5 /* noise 9 */
+    );
+    t.withVolume(V(5));   // volume column F
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar23(Track t) {   // bar 23
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar24(Track t) {   // bar 24
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 5 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 4 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar25(Track t) {   // bar 25
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column F
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar26(Track t) {   // bar 26
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 5 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 4 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar27(Track t) {   // bar 27
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column F
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar28(Track t) {   // bar 28
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 5 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 4 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar29(Track t) {   // bar 29
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column F
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar30(Track t) {   // bar 30
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 5 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 4 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar31(Track t) {   // bar 31
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar32(Track t) {   // bar 32
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 5 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 4 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar33(Track t) {   // bar 33
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar34(Track t) {   // bar 34
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 5 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 4 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar35(Track t) {   // bar 35
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar36(Track t) {   // bar 36
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 5 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 4 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar37(Track t) {   // bar 37
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar38(Track t) {   // bar 38
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 5 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 5 /* noise 9 */
+    );
+    t.withVolume(V(5));   // volume column F
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar39(Track t) {   // bar 39
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar40(Track t) {   // bar 40
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ13, 6 /* noise D */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 1 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 5 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 4 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar41(Track t) {   // bar 41
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 15 /* noise 9 */
+    );
+    t.withVolume(V(5));   // volume column F
+    t.addNotes(
+        NZ9, 12 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 18 /* noise 9 */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 27 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 18 /* noise 9 */
+    );
+  }
+
+  private static void noiBar42(Track t) {   // bar 42
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 27 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 18 /* noise 9 */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 27 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 18 /* noise 9 */
+    );
+  }
+
+  private static void noiBar43(Track t) {   // bar 43
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 27 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 10 /* noise 9 */
+    );
+    t.withVolume(V(5));   // volume column F
+    t.addNotes(
+        NZ9, 8 /* noise 9 */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 27 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 18 /* noise 9 */
+    );
+  }
+
+  private static void noiBar44(Track t) {   // bar 44
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 27 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 18 /* noise 9 */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 27 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 18 /* noise 9 */
+    );
+  }
+
+  private static void noiBar45(Track t) {   // bar 45
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 11 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 4 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 11 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(5));   // volume column F
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 4 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar46(Track t) {   // bar 46
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 11 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 4 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 11 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 4 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar47(Track t) {   // bar 47
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 11 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 4 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 11 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 4 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+  }
+
+  private static void noiBar48(Track t) {   // bar 48
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 11 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 4 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(5));   // volume column 5
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 11 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ13, 4 /* noise D */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ13, 2 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ10, 1 /* noise A */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 3 /* noise 9 */
+    );
+    t.withVolume(V(0));   // volume column 0
+    t.addNotes(
+        NZ9, 4 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ12, 1 /* noise C */,
+        NZ13, 3 /* noise D */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ13, 3 /* noise D */,
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(4));   // volume column 4
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
+    t.withVolume(V(3));   // volume column 3
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(2));   // volume column 2
+    t.addNotes(
+        NZ9, 2 /* noise 9 */
+    );
+    t.withVolume(V(1));   // volume column 1
+    t.addNotes(
+        NZ9, 1 /* noise 9 */
+    );
   }
 }
